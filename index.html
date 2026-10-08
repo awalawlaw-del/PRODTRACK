@@ -1358,6 +1358,20 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         function allRows() { return (includeKartu() ? excelData.concat(kartuProdRows()) : excelData).concat(receiverProdRows()); }
         // --- PERFORMA PER ORANG: grafik pencapaian harian vs target ---
         let perfChartInstance = null;
+        // Rumus capaian TUNGGAL: dipakai menu Detail Pencapaian dan Performa Per Orang agar hasilnya selalu sama.
+        // Receiver: 50% item + 50% pallet (rata-rata per hari kerja), lulus >= 90%. Picker/Packer: item saja, lulus >= 100%.
+        function capaianCalc(dep, qty, plt, days) {
+            const t = MINIMAL[dep], n = Math.max(1, days || 0);
+            const avgItem = qty / n, avgPlt = plt / n, itemPct = avgItem / t.item * 100;
+            if (dep === 'RECEIVER') {
+                const pltPct = avgPlt / t.pallet * 100, total = (itemPct + pltPct) / 2;
+                return { avgItem, avgPlt, itemPct, pltPct, total, failed: total < 90 };
+            }
+            return { avgItem, avgPlt, itemPct, pltPct: 0, total: itemPct, failed: itemPct < 100 };
+        }
+        // hari kerja = ada item (semua divisi) atau ada pallet (khusus Receiver)
+        const isActiveDay = (dep, qty, plt) => qty > 0 || (dep === 'RECEIVER' && plt > 0);
+
         function renderPerf() {
             const g = id => document.getElementById(id);
             const sel = g('perfNama'); if (!sel) return;
@@ -1385,7 +1399,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
 
             // Semua tanggal operasional dalam periode (ada data siapa pun) dipakai sebagai sumbu; hari tanpa data orang ini = 0
             const allDates = new Set(), byDay = {};
-            const blank = () => ({ main: 0, plt: 0, other: {}, notes: [] });
+            const blank = () => ({ main: 0, plt: 0, other: {}, notes: [], xls: new Set() });
             allRows().forEach(row => {
                 const tgl = normalizeDate(row[getColumnKey(row, ['tanggal', 'tgl', 'date'])]);
                 if (!tgl || (sDate && tgl < sDate) || (eDate && tgl > eDate)) return;
@@ -1398,7 +1412,12 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 const plt = parseInt(row[getColumnKey(row, ['pallet', 'plt'])] || 0) || 0;
                 const d = byDay[tgl] || (byDay[tgl] = blank());
                 if (b === div) { d.main += qty; d.plt += plt; } else d.other[b] = (d.other[b] || 0) + qty;
+                // keterangan dari Excel yang di-upload (abaikan teks otomatis dari menu Kartu)
+                const ketX = String(row[getColumnKey(row, ['keterangan', 'ket', 'note'])] || '').trim();
+                if (ketX && !/^Kartu (Penyiapan|Pengecekan)$/i.test(ketX)) d.xls.add(ketX);
             });
+            // catatan harian: tanggalnya ikut ditampilkan walau hari itu belum ada data item
+            noteRows().forEach(n => { if (n.nama === code && n.tgl && (!sDate || n.tgl >= sDate) && (!eDate || n.tgl <= eDate)) allDates.add(n.tgl); });
             const dates = [...allDates].sort();
             dates.forEach(t => { if (!byDay[t]) byDay[t] = blank(); });
             noteRows().forEach(n => { if (n.nama === code && byDay[n.tgl]) byDay[n.tgl].notes.push(n.text); });
@@ -1406,13 +1425,16 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const fmt = t => t.slice(8, 10) + '/' + t.slice(5, 7);
             const mains = dates.map(t => byDay[t].main);
             const total = mains.reduce((a, b) => a + b, 0);
-            const workDays = mains.filter(v => v > 0).length;
-            const hit = mains.filter(v => v >= tgtItem).length;
+            const dayCalc = t => capaianCalc(div, byDay[t].main, byDay[t].plt, 1);
+            const activeDates = dates.filter(t => isActiveDay(div, byDay[t].main, byDay[t].plt));
+            const workDays = activeDates.length;
+            const hit = activeDates.filter(t => !dayCalc(t).failed).length;
             const avg = workDays ? total / workDays : 0;
             const otherTot = {};
             dates.forEach(t => Object.keys(byDay[t].other).forEach(d => { otherTot[d] = (otherTot[d] || 0) + byDay[t].other[d]; }));
             const otherDivs = Object.keys(otherTot).filter(d => otherTot[d] > 0);
-            const pltArr = dates.map(t => byDay[t].plt), pltTotal = pltArr.reduce((a, b) => a + b, 0), pltDays = pltArr.filter(v => v > 0).length, pltAvg = pltDays ? pltTotal / pltDays : 0;
+            const pltArr = dates.map(t => byDay[t].plt), pltTotal = pltArr.reduce((a, b) => a + b, 0), pltDays = workDays, pltAvg = pltDays ? pltTotal / pltDays : 0;
+            const per = capaianCalc(div, total, pltTotal, workDays);   // sama persis dengan menu Detail Pencapaian
 
             const badge = div === 'PICKER' ? 'bg-blue-50 text-blue-700 border-blue-200' : div === 'PACKER' ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-amber-50 text-amber-700 border-amber-200';
             const chip = (l, v, c) => `<div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"><div class="text-[10px] font-bold uppercase text-slate-400">${l}</div><div class="text-lg font-black ${c || 'text-slate-800'}">${v}</div></div>`;
@@ -1426,7 +1448,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                     ${chip('Total Item ' + DL[div], total.toLocaleString())}
                     ${chip('Rata-rata / Hari Kerja', avg.toFixed(0) + ' <span class="text-xs font-semibold text-slate-400">target ' + tgtItem + '</span>', workDays && avg >= tgtItem ? 'text-emerald-600' : 'text-rose-600')}
-                    ${chip('Hari Capai Target', hit + ' / ' + dates.length)}
+                    ${chip('% Capaian Periode', (workDays ? per.total.toFixed(1) : '0.0') + '% <span class="text-xs font-semibold text-slate-400">' + (div === 'RECEIVER' ? 'min 90%' : 'min 100%') + '</span>', !workDays ? 'text-slate-400' : per.failed ? 'text-rose-600' : 'text-emerald-600')}
+                    ${chip('Hari Capai Target', hit + ' / ' + workDays + ' <span class="text-xs font-semibold text-slate-400">hari kerja</span>')}
                     ${chip('Hari Terbaik', dates.length ? Math.max(...mains).toLocaleString() : '-')}
                     ${div === 'RECEIVER' ? chip('Total Pallet Dikerjakan', pltTotal.toLocaleString(), 'text-amber-600') + chip('Rata-rata Pallet / Hari Kerja', pltAvg.toFixed(1) + ' <span class="text-xs font-semibold text-slate-400">target ' + tgtPlt + '</span>', pltDays && pltAvg >= tgtPlt ? 'text-emerald-600' : 'text-rose-600') : ''}
                     ${otherChip}
@@ -1445,7 +1468,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     labels: dates.map(fmt),
                     datasets: [
                         { label: 'Capaian ' + DL[div], data: mains, borderColor: COL[div], backgroundColor: FILL[div], fill: true, tension: 0.35, borderWidth: 3,
-                          pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: mains.map(v => v <= 0 ? '#cbd5e1' : v >= tgtItem ? '#10b981' : '#f43f5e'), pointBorderColor: '#fff', pointBorderWidth: 2,
+                          pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: dates.map(t => !isActiveDay(div, byDay[t].main, byDay[t].plt) ? '#cbd5e1' : dayCalc(t).failed ? '#f43f5e' : '#10b981'), pointBorderColor: '#fff', pointBorderWidth: 2,
                           datalabels: { display: () => dates.length <= 31, align: 'top', anchor: 'end', offset: 4, color: '#334155', font: { weight: 'bold', size: 10 }, formatter: v => v } },
                         ...otherDivs.map(d => ({ label: 'Aktivitas lain: ' + DL[d], data: dates.map(t => byDay[t].other[d] || 0), borderColor: COL[d], borderDash: [5, 4], borderWidth: 2, tension: 0.35, pointRadius: 3, pointBackgroundColor: COL[d], fill: false, datalabels: { display: false } })),
                         { label: 'Target ' + tgtItem + ' item/hari', data: dates.map(() => tgtItem), borderColor: '#475569', borderDash: [8, 5], borderWidth: 2, pointRadius: 0, fill: false, datalabels: { display: false } },
@@ -1460,7 +1483,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                         ...(div === 'RECEIVER' ? { y2: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { precision: 0 }, title: { display: true, text: 'Pallet' } } } : {}) } }
             });
             g('perfBody').innerHTML = dates.map((t, i) => {
-                const d = byDay[t], zero = d.main <= 0, pct = d.main / tgtItem * 100, ok = d.main >= tgtItem;
+                const d = byDay[t], zero = !isActiveDay(div, d.main, d.plt), dc = dayCalc(t), pct = dc.total, ok = !dc.failed;
                 const cls = zero ? 'text-slate-400' : ok ? 'text-emerald-600' : 'text-rose-600';
                 let diff = '-';
                 if (i > 0) { const dl = d.main - byDay[dates[i - 1]].main; diff = dl === 0 ? '<span class="text-slate-400">±0</span>' : `<span class="${dl > 0 ? 'text-emerald-600' : 'text-rose-600'} font-bold">${dl > 0 ? '▲ +' : '▼ '}${dl.toLocaleString()}</span>`; }
@@ -1473,7 +1496,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     <td class="px-3 py-2">${diff}</td>
                     ${div === 'RECEIVER' ? `<td class="px-3 py-2 font-bold ${d.plt <= 0 ? 'text-slate-400' : d.plt >= tgtPlt ? 'text-emerald-600' : 'text-slate-800'}">${d.plt} <span class="text-slate-400 text-xs">/ ${tgtPlt}</span></td>` : ''}
                     ${otherDivs.length ? `<td class="px-3 py-2 whitespace-nowrap">${oth}</td>` : ''}
-                    <td class="px-3 py-2 text-slate-600">${d.notes.length ? d.notes.map(escNote).join('; ') : '-'}</td></tr>`;
+                    <td class="px-3 py-2 text-slate-600">${(() => { const all = d.notes.concat([...d.xls]); return all.length ? all.map(escNote).join('; ') : '-'; })()}</td></tr>`;
             }).join('');
         }
         const _processDataOrig = processData;
@@ -1985,24 +2008,11 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 });
                 userActiveDaysCount = Math.max(1, userDateSet.size);
 
-                // Rata-rata item per hari kerja karyawan
-                let avgItemPerDay = myQty / userActiveDaysCount;
-                
-                // Persentase capaian dihitung berdasarkan rata-rata harian dibagi target harian
-                let itemPercent = (avgItemPerDay / targetItem) * 100;
-                let palletPercent = targetPallet > 0 ? (myPallet / targetPallet) * 100 : 0;
-                let totalPercent = 0;
-                let isFailed = false;
-
-                if (dep === 'RECEIVER') {
-                    let avgPalletPerDay = myPallet / userActiveDaysCount;
-                    let pPercent = (avgPalletPerDay / targetPallet) * 100;
-                    totalPercent = (itemPercent + pPercent) / 2;
-                    isFailed = totalPercent < 90;
-                } else {
-                    totalPercent = itemPercent;
-                    isFailed = totalPercent < 100; // Jika rata-rata harian di bawah target harian (misal < 200)
-                }
+                // Rumus tunggal (sama dengan Performa Per Orang)
+                const cap = capaianCalc(dep, myQty, myPallet, userActiveDaysCount);
+                let avgItemPerDay = cap.avgItem;
+                let totalPercent = cap.total;
+                let isFailed = cap.failed;
 
                 let capaianText = totalPercent.toFixed(1) + '%';
                 const noData = (myQty + myPallet + ['PICKER', 'PACKER', 'RECEIVER'].reduce((a, d) => a + (user.divQty[d] || 0), 0)) === 0;
