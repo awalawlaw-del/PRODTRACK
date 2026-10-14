@@ -804,6 +804,17 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
 
             <!-- ============ PANE: DATABASE ============ -->
             <div id="kp-pane-db" class="kp-pane">
+                <div class="kp-admin-only bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h3 class="text-sm font-extrabold text-slate-700">📋 Pembagian Kartu ke Picker <span class="text-slate-400 font-semibold">(dibagi merata: prioritas, umur, item, jumlah kartu)</span></h3>
+                        <div class="flex flex-wrap gap-2"><button onclick="kpAsgAll(true)" class="kp-btn gray">☑ Pilih Semua</button><button onclick="kpAsgAll(false)" class="kp-btn gray">☐ Kosongkan</button><button onclick="kpResetAsg()" class="kp-btn gray">↩ Reset Pembagian</button><button onclick="kpAssign()" class="kp-btn green">⚡ Bagi Otomatis</button></div>
+                    </div>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase mb-1">1. Pilih siapa yang dapat kartu (klik nama)</p>
+                    <div id="kpAsgPick" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 mb-3"></div>
+                    <p id="kpAsgInfo" class="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-2.5 mb-3"></p>
+                    <div id="kpAsgSum" class="mb-3"></div>
+                    <div id="kpAsgList" class="overflow-x-auto max-h-80 overflow-y-auto"></div>
+                </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div class="md:col-span-2 kp-admin-only">
@@ -846,15 +857,6 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
             <!-- ============ PANE: PENYIAPAN ============ -->
             <div id="kp-pane-siap" class="kp-pane hidden">
                 <div id="kpMine"></div>
-                <div class="kp-admin-only bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <h3 class="text-sm font-extrabold text-slate-700">📋 Pembagian Kartu <span class="text-slate-400 font-semibold">(acuan 200 item/orang)</span></h3>
-                        <button onclick="kpAssign()" class="kp-btn green">⚡ Bagi Otomatis</button>
-                    </div>
-                    <div id="kpAsgPick" class="flex flex-wrap gap-2 mb-2"></div>
-                    <p id="kpAsgInfo" class="text-xs text-slate-500 mb-3"></p>
-                    <div id="kpAsgList" class="overflow-x-auto max-h-80 overflow-y-auto"></div>
-                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
                     <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 border-t-4 border-t-amber-400">
                         <h2 class="text-lg font-extrabold text-slate-800 mb-1">Penyiapan</h2>
@@ -908,7 +910,7 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
                         <table class="min-w-full divide-y divide-slate-100 kp-resp">
                             <thead class="bg-slate-50"><tr>
                                 <th class="kp-th text-center">No. Kartu</th><th class="kp-th">Nama Dealer</th>
-                                <th class="kp-th text-center">Total Item</th><th class="kp-th">Tanggal</th><th class="kp-th text-center">Umur</th>
+                                <th class="kp-th text-center">Total Item</th><th class="kp-th">Dibagi ke</th><th class="kp-th">Tanggal</th><th class="kp-th text-center">Umur</th>
                             </tr></thead>
                             <tbody id="kpOopBody" class="divide-y divide-slate-100 bg-white"></tbody>
                         </table>
@@ -2711,9 +2713,9 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 entry = { type: 'err', title: q, msg: 'Kartu tidak ditemukan di database.' };
             } else {
                 const ok = hits.filter(r => r.status === needStatus);
-                const foreign = (kind === 'siap' && !isAdminU()) ? ok.find(r => r.assigned_to && r.assigned_to !== petugas()) : null;
+                const foreign = (kind === 'siap' && !isAdminU()) ? ok.find(r => r.assigned_to !== petugas()) : null;
                 if (foreign) {
-                    entry = { type: 'warn', title: q, msg: `Kartu ini dibagikan ke ${foreign.assigned_to}. Minta admin memindahkannya.` };
+                    entry = { type: 'warn', title: q, msg: foreign.assigned_to ? `Kartu ini dibagikan ke ${foreign.assigned_to}. Minta admin memindahkannya.` : 'Kartu ini belum dibagikan ke Anda oleh admin.' };
                 } else if (!ok.length) {
                     const st = hits[0].status;
                     let msg = `Sudah berstatus "${STATUS_LABEL[st]}".`;
@@ -2765,7 +2767,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             return Math.round((t0 - new Date(p[0], p[1] - 1, p[2])) / 86400000);
         };
         const isUrgentPick = r => { if (r.status !== 'BELUM') return false; const a = tglAge(r); return a !== null && a >= URGENT_DAYS; };
-        const urgentPick = () => vrows().filter(isUrgentPick);
+        const statRows = () => (isAdminU() && (window.kpCtx || 'db') === 'db') ? rows : vrows();
+        const urgentPick = () => statRows().filter(isUrgentPick);
         // kartu prioritas = No. Kartu diawali huruf P (P01, P02, ...)
         const isPriCard = c => /^[PH]\d/i.test(String(c || '').trim());
         const isPri = r => isPriCard(r.card_no);
@@ -2775,15 +2778,15 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const cardChip = c => `<span class="kp-card${isPriCard(c) ? ' pri' : ''}">${esc(c)}</span>`;
         const whoCell = (by, at) => (by && by !== '-') ? `<b class="text-slate-800">${esc(by)}</b><br><span class="text-[11px] text-slate-400">${fmtTime(at)}</span>` : '<span class="text-slate-300">-</span>';
         const priBadge = c => isPriCard(c) ? `<span class="kp-pill" style="background:${priRank(c) === 2 ? '#f59e0b' : '#d97706'};color:#fff;margin-bottom:4px">⭐ PRIORITAS ${priRank(c) === 2 ? 'P' : 'H'}</span><br>` : '';
-        const urgentPack = () => vrows().filter(r => r.status === 'SIAP' && ageDays(r.disiapkan_at) >= URGENT_DAYS);
+        const urgentPack = () => statRows().filter(r => r.status === 'SIAP' && ageDays(r.disiapkan_at) >= URGENT_DAYS);
         const isUrgent = r => r.status === 'SIAP' && ageDays(r.disiapkan_at) >= URGENT_DAYS;
 
         function renderStats() {
             $('kpUrgPack').textContent = groupByCard(urgentPack()).length;
             $('kpUrgPick').textContent = groupByCard(urgentPick()).length;
-            $('kpOosCard').textContent = groupByCard(vrows().filter(r => r.status === 'SIAP')).length;
-            $('kpPriPick').textContent = groupByCard(vrows().filter(r => r.status === 'BELUM' && isPri(r))).length;
-            $('kpPriPack').textContent = groupByCard(vrows().filter(r => r.status === 'SIAP' && isPri(r))).length;
+            $('kpOosCard').textContent = groupByCard(statRows().filter(r => r.status === 'SIAP')).length;
+            $('kpPriPick').textContent = groupByCard(statRows().filter(r => r.status === 'BELUM' && isPri(r))).length;
+            $('kpPriPack').textContent = groupByCard(statRows().filter(r => r.status === 'SIAP' && isPri(r))).length;
             const sumItem = list => list.reduce((s, r) => s + (parseInt(r.total_item, 10) || 0), 0);
             const c = s => sumItem(rows.filter(r => r.status === s));   // total ITEM, bukan jumlah delivery
             $('kpStTotal').textContent = sumItem(rows).toLocaleString();
@@ -2793,7 +2796,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const n = rows.filter(r => r.status === 'SIAP').length;
             $('kpOosBadge').textContent = n;
             const nOop = groupByCard(vrows().filter(r => r.status === 'BELUM')).length;
-            $('kpOopBadge').textContent = nOop; $('kpOopCard').textContent = nOop;
+            $('kpOopBadge').textContent = nOop; $('kpOopCard').textContent = groupByCard(statRows().filter(r => r.status === 'BELUM')).length;
             const nb = $('kpNavBadge'); if (nb) { nb.textContent = n; nb.style.display = n ? 'inline-block' : 'none'; }
         }
 
@@ -2873,9 +2876,10 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     <td class="kp-td text-center" data-label="No. Kartu">${cardChip(x.card)}</td>
                     <td class="kp-td font-semibold" data-label="Dealer">${esc([...new Set(x.items.map(i => i.dealer))].join(', '))}</td>
                     <td class="kp-td text-center font-bold" data-label="Total Item">${tot}</td>
+                    <td class="kp-td text-xs font-bold" data-label="Dibagi ke">${esc(x.items[0].assigned_to || '-')}</td>
                     <td class="kp-td whitespace-nowrap text-xs" data-label="Tanggal">${fmtDate(x.items[0].tgl)}</td>
                     <td class="kp-td text-center" data-label="Umur">${priBadge(x.card)}${age === null ? '-' : `<span class="kp-pill" style="background:${old ? '#f1f5f9;color:#334155' : '#f1f5f9;color:#64748b'}">${old ? '⏳ ' : ''}${age} hari</span>`}</td></tr>`;
-            }).join('') : '<tr><td colspan="5" class="p-8 text-center text-emerald-600 font-bold">✅ Tidak ada kartu yang menunggu picking.</td></tr>';
+            }).join('') : '<tr><td colspan="6" class="p-8 text-center text-slate-400 text-sm">Belum ada kartu yang dibagikan ke crew (atau semua sudah dipicking).</td></tr>';
             $('kpOopCount').textContent = `${g.length} kartu · ${list.length} delivery · ${list.reduce((s, r) => s + (r.total_item || 0), 0)} item belum dipicking`;
         }
         // ---------- Pembagian kartu ke picker + lokasi penyimpanan ----------
@@ -2885,34 +2889,47 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const outOf = n => rows.filter(r => r.status === 'BELUM' && r.assigned_to === n);   // sisa outstanding ikut dihitung
         const isPickerU = () => !isAdminU() && /^(PICKER|PENYIAPAN)$/.test(String((window.APP_USER && window.APP_USER.bagian) || '').toUpperCase());
         // picker: belum dipicking = kartu yang dibagikan ke dia; menunggu packing = kartu yang dia siapkan. Database Kartu tetap semua.
-        const vis = r => !isPickerU() || (r.status === 'BELUM' ? canSee(r) : r.status === 'SIAP' ? r.disiapkan_by === petugas() : true);
+        const vis = r => r.status === 'BELUM' ? (isAdminU() ? !!r.assigned_to : r.assigned_to === petugas()) : (isPickerU() && r.status === 'SIAP' ? r.disiapkan_by === petugas() : true);
         const vrows = () => rows.filter(vis);
-        const canSee = r => isAdminU() || r.assigned_to === petugas() || !rows.some(x => x.status === 'BELUM' && x.assigned_to);
-        const asgRoster = () => (typeof MASTER_USERS === 'undefined' ? [] : MASTER_USERS.map(m => ({ nama: String((typeof USER_NAME_MAP !== 'undefined' && USER_NAME_MAP[m.nama]) || m.nama).toUpperCase().trim(), bagian: m.bagian })).sort((a, b) => a.bagian.localeCompare(b.bagian) || a.nama.localeCompare(b.nama)));
+        const canSee = r => isAdminU() || r.assigned_to === petugas();
+        const asgRoster = () => (typeof MASTER_USERS === 'undefined' ? [] : MASTER_USERS.map(m => ({ code: m.nama, nama: String((typeof USER_NAME_MAP !== 'undefined' && USER_NAME_MAP[m.nama]) || m.nama).toUpperCase().trim(), bagian: m.bagian })).sort((a, b) => a.bagian.localeCompare(b.bagian) || a.nama.localeCompare(b.nama)));
         let asgChecked = new Set(); try { asgChecked = new Set(JSON.parse(localStorage.getItem('kp_asg_checked') || '[]')); } catch (_) {}
 
         function renderAsg() {
             const box = $('kpAsgPick'); if (!box) return;
             const ros = asgRoster();
-            box.innerHTML = ros.map(u => `<label class="flex items-center gap-1.5 text-xs font-semibold border rounded-lg px-2 py-1 cursor-pointer ${asgChecked.has(u.nama) ? 'bg-amber-50 border-amber-400' : 'border-slate-200'}"><input type="checkbox" ${asgChecked.has(u.nama) ? 'checked' : ''} onchange="kpToggleAsg('${u.nama}', this.checked)">${esc(u.nama)} <span class="text-[10px] text-slate-400">${esc(u.bagian)}</span>${outOf(u.nama).length ? ` <b class="text-amber-700">${itemsOf(outOf(u.nama))}/${TARGET_ITEM}</b>` : ''}</label>`).join('');
+            const stat = n => { const o = outOf(n), c = groupByCard(o); return { cards: c.length, items: itemsOf(o), pri: c.filter(x => priRank(x.card) > 0).length, urg: c.filter(x => x.items.some(isUrgentPick)).length, oldest: o.reduce((m, r) => Math.max(m, tglAge(r) || 0), 0) }; };
+            const DV = { PICKER: 'Picker', PACKER: 'Packer', RECEIVER: 'Receiver' };
+            box.innerHTML = ros.map(u => { const on = asgChecked.has(u.nama), st = stat(u.nama); return `<button type="button" onclick="kpToggleAsg('${u.nama}', ${!on})" class="text-left rounded-xl border-2 px-3 py-2 transition ${on ? 'bg-emerald-50 border-emerald-500 shadow' : 'bg-white border-slate-200 hover:border-slate-400'}"><div class="flex items-center justify-between gap-1"><span class="text-sm font-black text-slate-800">${esc(u.nama)}</span><span class="text-base">${on ? '✅' : '⬜'}</span></div><div class="text-[10px] font-mono text-slate-400">${esc(u.code)}</div><div class="text-[10px] font-bold text-slate-500">${esc(DV[u.bagian] || u.bagian)}${st.cards ? ` · <span class="text-amber-700">sudah ${st.cards} kartu / ${st.items} item</span>` : ''}</div></button>`; }).join('');
             const un = rows.filter(r => r.status === 'BELUM' && !r.assigned_to);
             const sel = ros.filter(u => asgChecked.has(u.nama));
             const exist = sel.reduce((s, u) => s + itemsOf(outOf(u.nama)), 0);
-            $('kpAsgInfo').textContent = `${groupByCard(un).length} kartu · ${itemsOf(un)} item belum dibagi` + (sel.length ? ` · ${sel.length} orang dicentang → perkiraan ${Math.round((itemsOf(un) + exist) / sel.length)} item/orang (acuan ${TARGET_ITEM})` : ' · centang orang yang ikut dibagi');
-            const opt = v => `<option value="">— belum dibagi —</option>` + ros.map(u => `<option ${u.nama === v ? 'selected' : ''}>${esc(u.nama)}</option>`).join('');
+            $('kpAsgInfo').innerHTML = `Belum dibagi: <b>${groupByCard(un).length} kartu · ${itemsOf(un)} item</b> &nbsp;|&nbsp; ` + (sel.length ? `Dipilih: <b>${sel.map(u => esc(u.nama)).join(', ')}</b> (${sel.length} orang) → perkiraan <b>±${Math.round((itemsOf(un) + exist) / sel.length)} item</b> & <b>±${Math.round((groupByCard(un).length + sel.reduce((s, u) => s + stat(u.nama).cards, 0)) / sel.length)} kartu</b> per orang` : '<span class="text-amber-700">Belum ada nama yang dipilih. Klik nama di atas.</span>');
+            const withAsg = ros.filter(u => stat(u.nama).cards);
+            $('kpAsgSum').innerHTML = withAsg.length ? `<p class="text-[11px] font-bold text-slate-500 uppercase mb-1">Hasil pembagian saat ini (kartu yang belum dipicking)</p><div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="kp-th">Nama</th><th class="kp-th text-center">Kartu</th><th class="kp-th text-center">Item</th><th class="kp-th text-center">⭐ P/H</th><th class="kp-th text-center">🚨 Urgent</th><th class="kp-th text-center">Umur tertua</th></tr></thead><tbody class="divide-y divide-slate-100">` + withAsg.map(u => { const t = stat(u.nama); return `<tr><td class="kp-td font-black">${esc(u.nama)} <span class="text-[10px] font-mono text-slate-400">${esc(u.code)}</span></td><td class="kp-td text-center font-bold">${t.cards}</td><td class="kp-td text-center font-bold">${t.items}</td><td class="kp-td text-center">${t.pri}</td><td class="kp-td text-center">${t.urg}</td><td class="kp-td text-center">${t.oldest} hari</td></tr>`; }).join('') + '</tbody></table></div>' : '';
+            const opt = v => `<option value="">— belum dibagi —</option>` + ros.map(u => `<option value="${esc(u.nama)}" ${u.nama === v ? 'selected' : ''}>${esc(u.nama)} (${esc(u.code)})</option>`).join('');
             const g = groupByCard(rows.filter(r => r.status === 'BELUM')).sort((a, b) => String(b.items[0].assigned_to ? 1 : 0).localeCompare(String(a.items[0].assigned_to ? 1 : 0)) || String(a.items[0].assigned_to || '').localeCompare(String(b.items[0].assigned_to || '')) || priCmp(a.card, b.card)).slice(0, 300);
             $('kpAsgList').innerHTML = g.length ? `<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="kp-th text-center">No. Kartu</th><th class="kp-th text-center">Item</th><th class="kp-th">Dealer</th><th class="kp-th">Dibagi ke</th></tr></thead><tbody class="divide-y divide-slate-100">` + g.map(x => `<tr><td class="kp-td text-center">${cardChip(x.card)}</td><td class="kp-td text-center font-bold">${itemsOf(x.items)}</td><td class="kp-td">${esc([...new Set(x.items.map(i => i.dealer))].join(', '))}</td><td class="kp-td"><select class="border border-slate-200 rounded p-1 text-xs" onchange="kpMove('${x.items.map(i => i.id).join(',')}', this.value)">${opt(x.items[0].assigned_to)}</select></td></tr>`).join('') + '</tbody></table>' : '<p class="text-xs text-slate-400 p-3">Tidak ada kartu outstanding.</p>';
         }
         function renderMine() {
             const el = $('kpMine'); if (!el) return;
             if (isAdminU() || !rows.some(r => r.status === 'BELUM' && r.assigned_to)) { el.innerHTML = ''; return; }
-            const mine = outOf(petugas()), it = itemsOf(mine), pct = Math.min(100, Math.round(it / TARGET_ITEM * 100));
-            el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-4 mb-5"><div class="flex justify-between text-sm font-extrabold text-slate-700"><span>Kartu Saya</span><span>${groupByCard(mine).length} kartu · ${it} / ${TARGET_ITEM} item</span></div><div class="h-2 bg-slate-100 rounded mt-2"><div class="h-2 bg-amber-400 rounded" style="width:${pct}%"></div></div></div>`;
+            const mine = outOf(petugas()), it = itemsOf(mine);
+            el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-4 mb-5"><div class="flex justify-between text-sm font-extrabold text-slate-700"><span>Kartu Saya</span><span>${groupByCard(mine).length} kartu · ${it} item</span></div></div>`;
         }
         window.kpToggleAsg = (n, on) => { on ? asgChecked.add(n) : asgChecked.delete(n); try { localStorage.setItem('kp_asg_checked', JSON.stringify([...asgChecked])); } catch (_) {} renderAsg(); };
+        window.kpAsgAll = on => { asgChecked = on ? new Set(asgRoster().map(u => u.nama)) : new Set(); try { localStorage.setItem('kp_asg_checked', JSON.stringify([...asgChecked])); } catch (_) {} renderAsg(); };
         window.kpMove = async (ids, name) => {
             if (!isAdminU()) return toast('Hanya admin yang bisa memindahkan kartu', 'err');
             try { await dbUpdate(ids.split(',').map(Number), { assigned_to: name || null }); toast(name ? 'Kartu dipindah ke ' + name : 'Pembagian kartu dibatalkan'); } catch (e) { toast('Gagal memindahkan: ' + (e.message || e), 'err'); }
+            renderAll();
+        };
+        window.kpResetAsg = async function () {
+            if (!isAdminU()) return toast('Hanya admin', 'err');
+            const ids = rows.filter(r => r.status === 'BELUM' && r.assigned_to).map(r => r.id);
+            if (!ids.length) return toast('Tidak ada pembagian untuk direset', 'warn');
+            if (!confirm(`Batalkan pembagian ${ids.length} delivery? Kartu akan hilang dari Outstanding Picking sampai dibagi lagi.`)) return;
+            try { await dbUpdate(ids, { assigned_to: null }); toast('Pembagian direset'); } catch (e) { toast('Gagal: ' + (e.message || e), 'err'); }
             renderAll();
         };
         window.kpAssign = async function () {
@@ -2921,14 +2938,26 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             if (!ppl.length) return toast('Centang dulu orang yang ikut dibagi', 'warn');
             const cards = groupByCard(rows.filter(r => r.status === 'BELUM' && !r.assigned_to));
             if (!cards.length) return toast('Tidak ada kartu yang belum dibagi', 'warn');
-            const load = {}, cnt = {}, plan = {};
-            ppl.forEach(p => { load[p] = itemsOf(outOf(p)); cnt[p] = groupByCard(outOf(p)).length; plan[p] = []; });
-            cards.sort((a, b) => priCmp(a.card, b.card) || itemsOf(b.items) - itemsOf(a.items));   // P, H, lalu reguler (item terbanyak dulu)
-            cards.forEach(c => {
-                const p = ppl.slice().sort((a, b) => load[a] - load[b] || cnt[a] - cnt[b] || a.localeCompare(b))[0];
-                plan[p].push(...c.items.map(i => i.id)); load[p] += itemsOf(c.items); cnt[p]++;
+            const load = {}, plan = {}, ncard = {}, t0 = {}, small = {}, sumTxt = {};
+            ppl.forEach(p => { load[p] = itemsOf(outOf(p)); ncard[p] = groupByCard(outOf(p)).length; plan[p] = []; t0[p] = 0; small[p] = 0; });
+            const meta = cards.map(c => ({ c, size: itemsOf(c.items), rank: priRank(c.card), age: Math.max(0, ...c.items.map(i => tglAge(i) || 0)) }));
+            const sizes = meta.map(m => m.size).sort((x, y) => x - y), med = sizes[Math.floor(sizes.length / 2)] || 0;
+            meta.forEach(m => { m.tier0 = m.rank > 0 || m.age >= URGENT_DAYS; m.small = m.size < med; });
+            // urutan: 1) prioritas P lalu H, 2) umur kartu (paling tua dulu / urgent), 3) item terbanyak. Sisanya (reguler) kartu besar dulu.
+            meta.sort((a, b) => (b.tier0 - a.tier0) || (b.rank - a.rank) || (b.tier0 ? b.age - a.age : 0) || (b.size - a.size));
+            const pc = {}, uc = {}; ppl.forEach(p => { pc[p] = 0; uc[p] = 0; });
+            meta.forEach(m => {
+                // pilih orang: seimbangkan jumlah kartu prioritas / urgent dulu, lalu total item, lalu jumlah kartu
+                const key = p => (m.rank > 0 ? [pc[p]] : m.tier0 ? [uc[p]] : m.small ? [small[p]] : [0]);
+                const best = ppl.slice().sort((a, b) => key(a)[0] - key(b)[0] || load[a] - load[b] || ncard[a] - ncard[b] || a.localeCompare(b))[0];
+                plan[best].push(...m.c.items.map(i => i.id)); load[best] += m.size; ncard[best]++;
+                if (m.rank > 0) pc[best]++; else if (m.tier0) uc[best]++; if (m.small) small[best]++;
             });
-            try { for (const p of ppl) if (plan[p].length) await dbUpdate(plan[p], { assigned_to: p }); toast(`${cards.length} kartu dibagi ke ${ppl.length} orang`); }
+            const left = 0, done = meta.length;
+            // konfirmasi sebelum disimpan: cegah salah bagi
+            const lines = ppl.map(p => `• ${p}: ${plan[p].length ? groupByCard(rows.filter(r => plan[p].includes(r.id))).length : 0} kartu baru · total ${load[p]} item (${ncard[p]} kartu)`).join('\n');
+            if (!confirm(`Bagi ${done} kartu ke ${ppl.length} orang?\n\n${lines}\n\nLanjutkan?`)) return;
+            try { for (const p of ppl) if (plan[p].length) await dbUpdate(plan[p], { assigned_to: p }); toast(`${done} kartu dibagi ke ${ppl.length} orang`); }
             catch (e) { toast('Gagal membagi (sudah jalankan SQL kolom assigned_to?): ' + (e.message || e), 'err'); }
             renderAll();
         };
@@ -2947,6 +2976,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             $('kpPriPickBox').classList.toggle('hidden', c === 'pack');
             $('kpPriPackBox').classList.toggle('hidden', c === 'pick');
             $('kpPriTitle').textContent = '⭐ Kartu Prioritas (P & H)' + (c === 'pick' ? ' · Picking' : c === 'pack' ? ' · Packing' : '');
+            try { renderStats(); } catch (_) {}
         }
         window.kpTab = function (name) {
             window.kpCurrent = name;
@@ -2995,7 +3025,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         window.kpPrioritas = function () {
             const c = window.kpCtx || 'db';
             const sts = c === 'pick' ? ['BELUM'] : c === 'pack' ? ['SIAP'] : ['BELUM', 'SIAP'];
-            const g = groupByCard(vrows().filter(r => isPri(r) && sts.includes(r.status)))
+            const g = groupByCard(statRows().filter(r => isPri(r) && sts.includes(r.status)))
                 .sort((a, b) => (a.status === b.status ? 0 : a.status === 'BELUM' ? -1 : 1) || priCmp(a.card, b.card));
             openKpModal('amber', '⭐ Kartu Prioritas' + (c === 'pick' ? ' Picking' : c === 'pack' ? ' Packing' : ''), 'Kartu berawalan huruf P dan H (P di atas H)' + (c === 'pick' ? ': prioritas di Outstanding Picking' : c === 'pack' ? ': prioritas di Outstanding Packing' : ': prioritas di Outstanding Picking dan Outstanding Packing'),
                 [['No. Kartu', 1], ['Nama Dealer'], ['No. Delivery'], ['Total Item', 1], ['Tanggal / Disiapkan'], ['Tahap', 1]],
