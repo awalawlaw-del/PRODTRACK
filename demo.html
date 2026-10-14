@@ -19,7 +19,7 @@
     // ===== DEMO SEED: data contoh (hanya diisi sekali per browser, tersimpan di localStorage) =====
     (function () {
         try {
-            if (localStorage.getItem('demo_seed_v1')) return;
+            if (localStorage.getItem('demo_seed_v2')) return;
             var seed = 7; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
             function ri(a, b) { return Math.floor(a + rnd() * (b - a + 1)); }
             function pick(a) { return a[Math.floor(rnd() * a.length)]; }
@@ -35,13 +35,13 @@
             var ketList = ['', '', '', '', 'Bantu leveling', 'Lembur 2 jam', 'Bantu bongkar container', ''];
 
             // --- gudang_data (Monitoring Produktivitas) ---
-            var gid = 1, gudang = [];
+            var HW = [0.6, 1, 1.3, 1.4, 1.2, 0.2, 0.7, 1.3, 1.2, 0.9, 0.4]; var gid = 1, gudang = [];
             days.forEach(function (d) {
                 var t = ymd(d);
                 [[P,'PICKER',200,320],[K,'PACKER',250,380],[R,'RECEIVER',120,190]].forEach(function (g) {
                     g[0].forEach(function (u) {
                         if (rnd() < 0.08) return;
-                        gudang.push({ id: gid++, created_at: nowIso, data_row: { Tanggal: t, Nama: u[0], Bagian: g[1], Jumlah: ri(g[2], g[3]), Pallet: 0, Keterangan: pick(ketList) } });
+                        var T = ri(g[2], g[3]), kt = pick(ketList), ws = [], sm = 0; HW.forEach(function (w) { var x = w * (0.8 + rnd() * 0.4); ws.push(x); sm += x; }); HW.forEach(function (w, hi) { var q = Math.round(T * ws[hi] / sm); if (q > 0) gudang.push({ id: gid++, created_at: nowIso, data_row: { Tanggal: t, Nama: u[0], Bagian: g[1], Jam: ('0' + (7 + hi)).slice(-2) + ':' + ('0' + ri(0, 59)).slice(-2), Jumlah: q, Pallet: 0, Keterangan: hi === 0 ? kt : '' } }); });
                     });
                 });
             });
@@ -91,7 +91,7 @@
             localStorage.setItem('lsdb_keterangan_harian', JSON.stringify(notes));
             localStorage.setItem('lsdb_kartu_picking', JSON.stringify(kp));
             localStorage.setItem('lsdb_honda_reports', JSON.stringify(hr));
-            localStorage.setItem('demo_seed_v1', '1');
+            localStorage.setItem('demo_seed_v2', '1');
         } catch (e) { console.warn('Seed demo gagal', e); }
     })();
     </script>
@@ -388,6 +388,7 @@
 
         <div class="sb-group">Monitoring</div>
         <button class="sb-item active" data-nav="gudang" onclick="switchTab('gudang')"><span class="sb-ic">📦</span>TRACK-X</button>
+        <button class="sb-item" data-nav="mp" onclick="switchTab('mp')"><span class="sb-ic">👤</span>TRAX-MP</button>
         <button class="sb-item" data-nav="honda" onclick="switchTab('honda')"><span class="sb-ic">📊</span>Generator Laporan Honda</button>
 
         <div class="sb-sep"></div>
@@ -477,29 +478,6 @@
                 </label>
             </div>
 
-            <!-- PERFORMA PER ORANG -->
-            <div id="perfCard" class="bg-white p-6 rounded-2xl shadow-sm mb-6 border border-slate-200">
-                <div class="flex flex-col md:flex-row md:items-end gap-4 mb-4">
-                    <div class="flex-1">
-                        <h2 class="text-lg font-extrabold text-slate-800">📈 Performa Per Orang</h2>
-                        <p class="text-xs text-slate-500">Pilih nama untuk melihat pencapaian dari hari ke hari dibanding target. Mengikuti Periode Tanggal di atas (kosong = semua tanggal).</p>
-                    </div>
-                    <div class="md:w-72">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Nama</label>
-                        <select id="perfNama" onchange="renderPerf()" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"></select>
-                    </div>
-                </div>
-                <div id="perfInfo" class="mb-4"></div>
-                <div id="perfChartWrap" style="position:relative;height:300px"><canvas id="perfChart"></canvas></div>
-                <div class="overflow-x-auto mt-5">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-slate-50"><tr id="perfHead"></tr></thead>
-                        <tbody id="perfBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-                <div id="perfPager" class="flex items-center justify-between gap-2 mt-3"></div>
-            </div>
-
             <!-- AREA DASHBOARD -->
             <div id="captureArea" class="bg-slate-200 p-6 md:p-8 rounded-[1.5rem] shadow-md border-4 border-slate-200 relative mb-6">
                 
@@ -567,13 +545,6 @@
                             <h3 class="text-sm font-extrabold text-slate-700 mb-4 flex items-center gap-2" id="lineChartTitle">📈 Grafik Tren Harian</h3>
                             <div class="relative h-60"><canvas id="lineChart"></canvas></div>
                         </div>
-                    </div>
-
-                    <!-- CHART KOMPARASI PROSES PRODUKSI -->
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 class="text-sm font-extrabold text-slate-700 mb-1 flex items-center gap-2">📊 Grafik Komparasi Proses Produksi (Leveling vs Picking & Picking vs Packing)</h3>
-                        <p class="text-xs text-slate-500 mb-4">Membandingkan total jumlah yang di-leveling dengan picking, serta picking dengan packing sesuai tanggal terpilih.</p>
-                        <div class="relative h-72"><canvas id="comparisonChart"></canvas></div>
                     </div>
 
                     <!-- User Specific Chart (Tampil jika 1 User Dicari) -->
@@ -1044,6 +1015,44 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
     <!-- ========================================== -->
     <!-- CATATAN HARIAN (keterangan -> laporan produktivitas) -->
     <!-- ========================================== -->
+    <div id="section-mp" class="app-section p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5 flex flex-col md:flex-row md:items-end gap-4">
+                <div class="flex-1"><h1 class="text-2xl font-extrabold text-slate-800 mb-1">👤 TRAX-MP</h1><p class="text-slate-500 text-sm">Performa produktivitas per orang. Pilih periode, lalu pilih nama atau Semua Crew.</p></div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Dari Tanggal</label><input type="date" id="mpStart" onchange="mpSync()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Sampai Tanggal</label><input type="date" id="mpEnd" onchange="mpSync()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"></div>
+            </div>
+            <!-- PERFORMA PER ORANG -->
+            <div id="perfCard" class="bg-white p-6 rounded-2xl shadow-sm mb-6 border border-slate-200">
+                <div class="flex flex-col md:flex-row md:items-end gap-4 mb-4">
+                    <div class="flex-1">
+                        <h2 class="text-lg font-extrabold text-slate-800">📈 Performa Per Orang</h2>
+                        <p class="text-xs text-slate-500">Pilih nama untuk melihat pencapaian dari hari ke hari dibanding target. Mengikuti Periode Tanggal di atas (kosong = semua tanggal).</p>
+                    </div>
+                    <div class="md:w-72">
+                        <div id="perfModeBtns" class="flex gap-2 mb-2"><button id="perfMode_nama" onclick="perfMode('nama')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 text-white">👤 Nama</button><button id="perfMode_bagian" onclick="perfMode('bagian')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600">👥 Bagian</button></div>
+                        <label id="perfNamaLbl" class="block text-xs font-bold text-slate-600 mb-1">Pilih Nama</label>
+                        <select id="perfNama" onchange="renderPerf()" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"></select>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 mb-4"><button id="perfTab_daily" onclick="perfView('daily')" class="px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white">📅 Harian</button><button id="perfTab_time" onclick="perfView('time')" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600">⏱️ TIME ANALYTIC</button></div>
+                <div id="perfDaily">
+                <div id="perfInfo" class="mb-4"></div>
+                <div id="perfChartWrap" style="position:relative;height:300px"><canvas id="perfChart"></canvas></div>
+                <div class="overflow-x-auto mt-5">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50"><tr id="perfHead"></tr></thead>
+                        <tbody id="perfBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div id="perfPager" class="flex items-center justify-between gap-2 mt-3"></div>
+                </div>
+                <div id="perfTime" class="hidden"><div class="flex flex-wrap items-end gap-3 mb-4"><div><label class="block text-xs font-bold text-slate-600 mb-1">Sumber Data</label><select id="perfTSrc" onchange="renderPerf()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="xls">Excel (kolom Jam)</option><option value="kartu">Kartu (jam sorot)</option></select></div><div><label class="block text-xs font-bold text-slate-600 mb-1">Zona Jam Excel</label><select id="perfTZ" onchange="renderPerf()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="0">Tanpa geser</option><option value="1" selected>+1 jam (WIB → WITA)</option></select></div><p class="text-xs text-slate-500 flex-1">Item per jam kerja: jam paling produktif, jam sepi, dan kontribusi tiap divisi. Mengikuti Periode Tanggal dan pilihan nama di atas (pilih Semua Crew atau per bagian untuk satu tim).</p></div><div class="flex flex-wrap items-end gap-2 mb-4"><div><label class="block text-xs font-bold text-slate-600 mb-1">Dari jam</label><select id="perfTFrom" onchange="renderPerf()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="0" selected>00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option></select></div><div><label class="block text-xs font-bold text-slate-600 mb-1">Sampai jam</label><select id="perfTTo" onchange="renderPerf()" class="border border-slate-200 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="24" selected>24:00</option></select></div><button onclick="perfRange(0,24)" class="px-3 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">Semua jam</button><button onclick="perfRange(8,12)" class="px-3 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">08:00–12:00</button><button onclick="perfRange(13,17)" class="px-3 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">13:00–17:00</button></div>
+                <div id="perfTimeInfo" class="mb-4"></div><div style="position:relative;height:300px"><canvas id="perfTimeChart"></canvas></div><div id="perfTimeTable" class="overflow-x-auto mt-5"></div></div>
+            </div>
+        </div>
+    </div>
+
     <div id="section-ket" class="app-section p-4 md:p-8">
         <div class="max-w-3xl mx-auto">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
@@ -1391,7 +1400,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         Chart.defaults.borderColor = '#e8ebf7';
 
         function switchTab(target) {
-            const map = { gudang: 'section-gudang', honda: 'section-honda', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep' };
+            const map = { gudang: 'section-gudang', honda: 'section-honda', mp: 'section-mp', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep' };
             const accessKey = target === 'kartu' ? 'kp-' + (window.kpCurrent || 'db') : target;
             if (window.canAccess && !window.canAccess(accessKey)) return;
             document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active-app'));
@@ -1399,6 +1408,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
             if (target === 'honda') updateHondaIntegratedChart();
             if (target === 'gudang') refreshProduktivitas();
+            if (target === 'mp') mpOpen();
             if (target === 'users' && window.authOnOpenUsers) authOnOpenUsers();
             if (target === 'ket' && window.ketOnOpen) ketOnOpen();
             if (target === 'rcv' && window.rcvOnOpen) rcvOnOpen();
@@ -1483,8 +1493,13 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const DL = { PICKER: 'Picker', PACKER: 'Packer', RECEIVER: 'Receiver' };
             const COL = { PICKER: '#2563eb', PACKER: '#7c3aed', RECEIVER: '#f59e0b' };
             const FILL = { PICKER: 'rgba(37,99,235,0.12)', PACKER: 'rgba(124,58,237,0.12)', RECEIVER: 'rgba(245,158,11,0.14)' };
-            if (!sel.options.length) {
-                sel.innerHTML = MASTER_USERS.slice().sort((a, b) => (SORT_ORDER[a.bagian] - SORT_ORDER[b.bagian]) || nameOf(a.nama).localeCompare(nameOf(b.nama)))
+            const crewOnly = !!(window.APP_USER && window.APP_USER.role !== 'ADMIN');
+            const mode = crewOnly ? 'nama' : (window._perfMode || 'nama');
+            if (!sel.options.length || sel.dataset.crew !== String(crewOnly) || sel.dataset.mode !== mode) {
+                sel.dataset.crew = String(crewOnly); sel.dataset.mode = mode;
+                ['nama', 'bagian'].forEach(k => { const b = g('perfMode_' + k); if (b) b.className = 'px-3 py-1.5 text-xs font-bold rounded-lg ' + (k === mode ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'); });
+                g('perfNamaLbl').textContent = mode === 'bagian' ? 'Pilih Bagian' : 'Pilih Nama'; g('perfModeBtns').classList.toggle('hidden', crewOnly);
+                sel.innerHTML = (mode === 'bagian' ? '<option value="__PICKER__">🔵 SEMUA PICKER</option><option value="__PACKER__">🟣 SEMUA PACKER</option><option value="__RECEIVER__">🟠 SEMUA RECEIVER</option>' : (crewOnly ? '' : '<option value="__ALL__">👥 SEMUA CREW</option>')) + MASTER_USERS.filter(m => mode !== 'bagian' && (!crewOnly || nameOf(m.nama) === String(window.APP_USER.nama).toUpperCase())).slice().sort((a, b) => (SORT_ORDER[a.bagian] - SORT_ORDER[b.bagian]) || nameOf(a.nama).localeCompare(nameOf(b.nama)))
                     .map(m => `<option value="${m.nama}">${nameOf(m.nama)} (${DL[m.bagian]})</option>`).join('');
             }
             const uid = window.APP_USER ? String(window.APP_USER.id) : '';
@@ -1495,9 +1510,11 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     if (own) sel.value = own.nama;
                 }
             }
+            if (window._perfView === 'time') { renderPerfTime(); return; }
+            if (sel.value.startsWith('__')) { renderPerfAll(); return; }
             const code = sel.value;
             const ros = MASTER_USERS.find(m => m.nama === code);
-            if (!ros) return;
+            if (!ros) { if (crewOnly) g('perfInfo').innerHTML = '<div class="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-4">Nama Anda belum terdaftar di roster. Hubungi admin.</div>'; return; }
             const div = ros.bagian, tgtItem = MINIMAL[div].item, tgtPlt = MINIMAL[div].pallet;
             const sDate = g('startDate').value, eDate = g('endDate').value;
 
@@ -1615,6 +1632,120 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     ${otherDivs.length ? `<td class="px-3 py-2 whitespace-nowrap">${oth}</td>` : ''}
                     <td class="px-3 py-2 text-slate-600">${(() => { const all = d.notes.concat([...d.xls]); return all.length ? all.map(escNote).join('; ') : '-'; })()}</td></tr>`;
             }).join('');
+        }
+        // --- PERFORMA: SEMUA CREW + TIME ANALYTIC ---
+        let perfTimeChartInstance = null;
+        function renderPerfAll() {
+            const g = id => document.getElementById(id), nameOf = c => String(USER_NAME_MAP[c] || c).toUpperCase();
+            const DL = { PICKER: 'Picker', PACKER: 'Packer', RECEIVER: 'Receiver' }, COL = { PICKER: '#2563eb', PACKER: '#7c3aed', RECEIVER: '#f59e0b' };
+            const sDate = g('startDate').value, eDate = g('endDate').value, agg = {}, sv = g('perfNama').value, grp = sv === '__ALL__' ? '' : sv.slice(2, -2);
+            MASTER_USERS.forEach(m => { if (!grp || m.bagian === grp) agg[m.nama] = { div: m.bagian, day: {} }; });
+            allRows().forEach(row => {
+                const tgl = normalizeDate(row[getColumnKey(row, ['tanggal', 'tgl', 'date'])]);
+                if (!tgl || (sDate && tgl < sDate) || (eDate && tgl > eDate)) return;
+                const a = agg[String(row[getColumnKey(row, ['nama', 'user'])] || '').trim().toUpperCase()];
+                if (!a || getBagianExcel(row[getColumnKey(row, ['bagian', 'divisi', 'dept'])]) !== a.div) return;
+                const d = a.day[tgl] || (a.day[tgl] = { q: 0, p: 0, k: new Set(), n: [] });
+                d.q += parseInt(row[getColumnKey(row, ['jumlah', 'qty', 'item'])] || 0) || 0;
+                d.p += parseInt(row[getColumnKey(row, ['pallet', 'plt'])] || 0) || 0;
+                const kx = String(row[getColumnKey(row, ['keterangan', 'ket', 'note'])] || '').trim(); if (kx && !/^Kartu (Penyiapan|Pengecekan)$/i.test(kx)) d.k.add(kx);
+            });
+            noteRows().forEach(n => { const a = agg[n.nama]; if (!a || !n.tgl || (sDate && n.tgl < sDate) || (eDate && n.tgl > eDate)) return; (a.day[n.tgl] || (a.day[n.tgl] = { q: 0, p: 0, k: new Set(), n: [] })).n.push(n.text); });
+            const list = Object.keys(agg).map(code => {
+                const a = agg[code]; let q = 0, p = 0, wd = 0, hit = 0;
+                Object.values(a.day).forEach(d => { q += d.q; p += d.p; if (isActiveDay(a.div, d.q, d.p)) { wd++; if (!capaianCalc(a.div, d.q, d.p, 1).failed) hit++; } });
+                const c = capaianCalc(a.div, q, p, wd);
+                return { code, day: a.day, div: a.div, q, wd, hit, avg: wd ? q / wd : 0, pct: wd ? c.total : 0, ok: wd > 0 && !c.failed };
+            }).sort((x, y) => (SORT_ORDER[x.div] - SORT_ORDER[y.div]) || y.pct - x.pct);
+            const pp = list.map(x => x.pct).filter(v => v > 0), pmx = pp.length ? Math.max(...pp) : 0, pmn = pp.length ? Math.min(...pp) : 0;
+            const act = list.filter(x => x.wd > 0), okN = act.filter(x => x.ok).length;
+            const chip = (l, v) => `<div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"><div class="text-[10px] font-bold uppercase text-slate-400">${l}</div><div class="text-lg font-black text-slate-800">${v}</div></div>`;
+            g('perfInfo').innerHTML = `<div class="text-xl font-black text-slate-800 mb-3">${grp ? '👥 Semua ' + grp.charAt(0) + grp.slice(1).toLowerCase() : '👥 Semua Crew'}</div><div class="grid grid-cols-2 md:grid-cols-4 gap-3">${chip('Crew Aktif', act.length + ' / ' + list.length)}${chip('Capai Target', okN + ' / ' + act.length)}${chip('Rata-rata Capaian', (act.length ? act.reduce((s, x) => s + x.pct, 0) / act.length : 0).toFixed(1) + '%')}${chip('Total Item', list.reduce((s, x) => s + x.q, 0).toLocaleString())}</div>`;
+            if (perfChartInstance) perfChartInstance.destroy();
+            perfChartInstance = new Chart(g('perfChart').getContext('2d'), { type: 'bar', data: { labels: list.map(x => nameOf(x.code)), datasets: [{ label: '% Capaian', data: list.map(x => +x.pct.toFixed(1)), backgroundColor: list.map(x => heatColor(x.pct, pmn, pmx)), borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Warna: hijau = capaian tertinggi → merah = terendah', color: '#94a3b8', font: { size: 10 } }, datalabels: { anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' }, color: '#334155', formatter: v => v + '%' } }, scales: { y: { beginAtZero: true } } } });
+            g('perfHead').innerHTML = ['Nama', 'Divisi', 'Total Item', 'Hari Kerja', 'Rata-rata / Hari', 'Target', '% Capaian', 'Hari Capai', 'Status'].map(h => `<th class="px-3 py-2 text-left text-xs font-bold text-slate-500 uppercase">${h}</th>`).join('');
+            const periode = (sDate || 'awal') + ' s/d ' + (eDate || 'akhir');
+            const detail = x => {
+                const ds = Object.keys(x.day).sort().reverse();
+                if (!ds.length) return `<div class="text-xs text-slate-500">Tidak ada data pada periode ${periode}.</div>`;
+                const rec = ds.map(t => { const d = x.day[t], c = capaianCalc(x.div, d.q, d.p, 1), on = isActiveDay(x.div, d.q, d.p), k = d.n.concat([...d.k]); return `<tr><td class="px-2 py-1 whitespace-nowrap font-semibold">${t.slice(8, 10)}/${t.slice(5, 7)}</td><td class="px-2 py-1 font-bold">${d.q.toLocaleString()}</td><td class="px-2 py-1 font-bold ${on ? (c.failed ? 'text-rose-600' : 'text-emerald-600') : 'text-slate-400'}">${on ? c.total.toFixed(0) + '%' : '-'}</td>${x.div === 'RECEIVER' ? `<td class="px-2 py-1">${d.p}</td>` : ''}<td class="px-2 py-1 text-slate-600">${k.length ? k.map(escNote).join('; ') : '-'}</td></tr>`; }).join('');
+                return `<div class="flex items-center justify-between mb-2"><div class="text-xs font-bold text-slate-600">Rincian ${nameOf(x.code)} · ${periode}</div><button onclick="event.stopPropagation(); perfOpen('${x.code}')" class="text-[11px] font-bold text-blue-600 hover:underline">Buka grafik harian →</button></div><table class="min-w-full text-xs"><thead><tr class="text-left text-slate-400 uppercase"><th class="px-2 py-1">Tanggal</th><th class="px-2 py-1">Item</th><th class="px-2 py-1">% Capaian</th>${x.div === 'RECEIVER' ? '<th class="px-2 py-1">Pallet</th>' : ''}<th class="px-2 py-1">Keterangan</th></tr></thead><tbody class="divide-y divide-slate-200">${rec}</tbody></table>`;
+            };
+            g('perfBody').innerHTML = list.map(x => { const c = x.wd ? (x.ok ? 'text-emerald-600' : 'text-rose-600') : 'text-slate-400'; return `<tr onclick="perfAllToggle('${x.code}')" class="cursor-pointer hover:bg-slate-50"><td class="px-3 py-2 font-semibold text-blue-700 underline decoration-dotted">${nameOf(x.code)} ▾</td><td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:${COL[x.div]}1f;color:${COL[x.div]}">${DL[x.div]}</span></td><td class="px-3 py-2 font-black">${x.q.toLocaleString()}</td><td class="px-3 py-2">${x.wd}</td><td class="px-3 py-2">${x.avg.toFixed(0)}</td><td class="px-3 py-2 text-slate-500">${MINIMAL[x.div].item}</td><td class="px-3 py-2 font-bold ${c}">${x.pct.toFixed(0)}%</td><td class="px-3 py-2">${x.hit} / ${x.wd}</td><td class="px-3 py-2 font-bold ${c}">${x.wd ? (x.ok ? '✔ Capai' : '✖ Belum') : '-'}</td></tr><tr id="perfDet_${x.code}" class="hidden"><td colspan="9" class="px-3 py-3 bg-slate-50">${detail(x)}</td></tr>`; }).join('');
+            g('perfPager').innerHTML = '';
+        }
+        function hourOf(v) {
+            if (v == null || v === '') return null;
+            if (v instanceof Date) return v.getHours();
+            if (typeof v === 'number') { const f = v % 1; return (v >= 0 && v < 24 && f === 0) ? v : Math.floor(f * 24 + 1e-9); }
+            const m = String(v).match(/(\d{1,2})\s*[:.]\s*(\d{2})/), h = m ? +m[1] : parseInt(v, 10);
+            return h >= 0 && h <= 23 ? h : null;
+        }
+        function perfRange(a, b) { document.getElementById('perfTFrom').value = a; document.getElementById('perfTTo').value = b; renderPerf(); }
+        function mpOpen() { document.getElementById('mpStart').value = document.getElementById('startDate').value; document.getElementById('mpEnd').value = document.getElementById('endDate').value; refreshProduktivitas(); }
+        function mpSync() { document.getElementById('startDate').value = document.getElementById('mpStart').value; document.getElementById('endDate').value = document.getElementById('mpEnd').value; renderPerf(); }
+        function shiftH(h, o) { return h == null ? null : (((h + o) % 24) + 24) % 24; }
+        function heatColor(v, mn, mx) { return v <= 0 ? '#cbd5e1' : 'hsl(' + Math.round((mx === mn ? 1 : (v - mn) / (mx - mn)) * 130) + ',75%,45%)'; }
+        function perfAllToggle(c) { const r = document.getElementById('perfDet_' + c); if (r) r.classList.toggle('hidden'); }
+        function perfMode(m) { window._perfMode = m; renderPerf(); }
+        function perfOpen(c) { perfMode('nama'); document.getElementById('perfNama').value = c; perfView('daily'); }
+        function perfView(v) {
+            window._perfView = v;
+            document.getElementById('perfDaily').classList.toggle('hidden', v === 'time');
+            document.getElementById('perfTime').classList.toggle('hidden', v !== 'time');
+            ['daily', 'time'].forEach(k => { document.getElementById('perfTab_' + k).className = 'px-4 py-2 text-xs font-bold rounded-lg ' + (k === v ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'); });
+            renderPerf();
+        }
+        function renderPerfTime() {
+            const g = id => document.getElementById(id), sel = g('perfNama'), all = sel.value.startsWith('__'), grp = (all && sel.value !== '__ALL__') ? sel.value.slice(2, -2) : '', code = sel.value;
+            const nameOf = c => String(USER_NAME_MAP[c] || c).toUpperCase(), COL = { PICKER: '#2563eb', PACKER: '#7c3aed', RECEIVER: '#f59e0b' };
+            const sDate = g('startDate').value, eDate = g('endDate').value, src = g('perfTSrc').value, f = +g('perfTFrom').value, t2 = +g('perfTTo').value, off = +g('perfTZ').value, P = {};
+            const H = Array.from({ length: 24 }, () => ({ PICKER: 0, PACKER: 0, RECEIVER: 0 })); let n = 0;
+            if (f >= t2) { if (perfTimeChartInstance) perfTimeChartInstance.destroy(); g('perfTimeTable').innerHTML = ''; g('perfTimeInfo').innerHTML = '<div class="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-4">Rentang jam tidak valid: "Dari jam" harus lebih kecil dari "Sampai jam".</div>'; return; }
+            const add = (tgl, nm, div, h, q) => {
+                if (h == null || !tgl || (sDate && tgl < sDate) || (eDate && tgl > eDate) || (!all && nm !== code) || !(div in H[0]) || h < f || h >= t2) return;
+                if (grp) { const rb = MASTER_USERS.find(m => m.nama === nm); if (!rb || rb.bagian !== grp) return; }
+                H[h][div] += q; n++; (P[nm] || (P[nm] = Array(24).fill(0)))[h] += q;
+            };
+            if (src === 'xls') {
+                excelData.forEach(row => {
+                    const jk = getColumnKey(row, ['jam', 'waktu', 'time', 'hour']); if (!jk) return;
+                    add(normalizeDate(row[getColumnKey(row, ['tanggal', 'tgl', 'date'])]), String(row[getColumnKey(row, ['nama', 'user'])] || '').trim().toUpperCase(), getBagianExcel(row[getColumnKey(row, ['bagian', 'divisi', 'dept'])]), shiftH(hourOf(row[jk]), off), parseInt(row[getColumnKey(row, ['jumlah', 'qty', 'item'])] || 0) || 0);
+                });
+            } else {
+                const rev = {}; Object.keys(USER_NAME_MAP).forEach(k => { rev[String(USER_NAME_MAP[k]).toUpperCase()] = k; });
+                ((window.kpGetRows && window.kpGetRows()) || []).forEach(r => {
+                    [['disiapkan_by', 'disiapkan_at', 'PICKER'], ['dicek_by', 'dicek_at', 'PACKER']].forEach(([by, at, div]) => {
+                        if (!r[by] || !r[at]) return;
+                        const nm = String(r[by]).trim().toUpperCase(), d = new Date(r[at]);
+                        add(d.toLocaleDateString('en-CA'), rev[nm] || nm, div, d.getHours(), parseInt(r.total_item, 10) || 0);
+                    });
+                });
+            }
+            const tot = H.map(x => x.PICKER + x.PACKER + x.RECEIVER), sum = tot.reduce((a, b) => a + b, 0), title = all ? (grp ? '👥 Semua ' + grp.charAt(0) + grp.slice(1).toLowerCase() : '👥 Semua Crew') : nameOf(code);
+            if (perfTimeChartInstance) perfTimeChartInstance.destroy();
+            if (!n || !sum) { g('perfTimeInfo').innerHTML = `<div class="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-4">Belum ada data jam untuk <b>${title}</b> pada periode ini. ${src === 'xls' ? 'Upload Excel yang punya kolom <b>Jam</b> (atau <b>Waktu</b>), atau pilih sumber Kartu.' : 'Belum ada kartu yang disorot.'}</div>`; g('perfTimeTable').innerHTML = ''; return; }
+            const hs = tot.map((v, i) => i).filter(i => tot[i] > 0), range = [], full = f === 0 && t2 === 24; for (let i = full ? Math.min(...hs) : f; i < (full ? Math.max(...hs) + 1 : t2); i++) range.push(i);
+            const rank = hs.slice().sort((a, b) => tot[b] - tot[a]), top3 = rank.slice(0, 3), low = rank[rank.length - 1];
+            const hh = i => String(i).padStart(2, '0') + ':00', share = top3.reduce((s, i) => s + tot[i], 0) / sum * 100;
+            const chip = (l, v, c) => `<div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"><div class="text-[10px] font-bold uppercase text-slate-400">${l}</div><div class="text-lg font-black ${c || 'text-slate-800'}">${v}</div></div>`;
+            const avgA = sum / hs.length, prod = hs.filter(i => tot[i] >= avgA), pad = i => String(i).padStart(2, '0');
+            const rng = a => { const o = []; let s0 = null, p0 = null; a.forEach(i => { if (s0 === null) s0 = p0 = i; else if (i === p0 + 1) p0 = i; else { o.push([s0, p0]); s0 = p0 = i; } }); if (s0 !== null) o.push([s0, p0]); return o.map(r => pad(r[0]) + ':00–' + pad(r[1] + 1) + ':00').join(', ') || '-'; };
+            const sub = (i) => ' <span class="text-xs font-semibold text-slate-400">(' + tot[i].toLocaleString() + ')</span>';
+            g('perfTimeInfo').innerHTML = `<div class="text-xl font-black text-slate-800 mb-3">⏱️ ${title} <span class="text-sm font-bold text-slate-400">· ${f === 0 && t2 === 24 ? 'Semua jam' : pad(f) + ':00–' + pad(t2) + ':00'}</span></div><div class="grid grid-cols-2 md:grid-cols-5 gap-3">${chip('Total Item', sum.toLocaleString())}${chip('Jam Paling Produktif', hh(rank[0]) + sub(rank[0]), 'text-emerald-600')}${chip('Jam Terendah', hh(low) + sub(low), 'text-rose-600')}${chip('Rata-rata / Jam Aktif', Math.round(sum / hs.length).toLocaleString())}${chip('3 Jam Teratas', top3.slice().sort((a, b) => a - b).map(hh).join(' · ') + ' <span class="text-xs font-semibold text-slate-400">' + share.toFixed(0) + '%</span>')}${chip('Jam Produktif (≥ rata-rata)', rng(prod), 'text-emerald-600')}</div>`;
+            const vals = range.map(i => tot[i]), pos = vals.filter(v => v > 0), mx = Math.max(...pos), mn = Math.min(...pos);
+            const ds = [{ label: 'Total Item', data: vals, backgroundColor: vals.map(v => heatColor(v, mn, mx)), borderRadius: 4 }];
+            perfTimeChartInstance = new Chart(g('perfTimeChart').getContext('2d'), { type: 'bar', data: { labels: range.map(hh), datasets: ds }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Warna: hijau = jam paling tinggi → merah = paling rendah', color: '#94a3b8', font: { size: 10 } }, tooltip: { callbacks: { afterBody: it => { const i = range[it[0].dataIndex]; return ['PICKER', 'PACKER', 'RECEIVER'].filter(d => H[i][d] > 0).map(d => d + ': ' + H[i][d].toLocaleString()); } } }, datalabels: { display: c => c.dataset.data[c.dataIndex] > 0, anchor: 'end', align: 'top', font: { size: 10, weight: 'bold' }, color: '#334155' } }, scales: { y: { beginAtZero: true } } } });
+            const th = a => a.map(h => `<th class="px-3 py-2 text-left text-xs font-bold text-slate-500 uppercase">${h}</th>`).join('');
+            let rows, head;
+            if (all) {
+                head = ['Nama', 'Divisi', 'Total Item', 'Jam Puncak', 'Jam Terendah', 'Jam Produktif', 'Rata-rata / Jam Aktif'];
+                rows = Object.keys(P).map(c => { const a = P[c], hz = a.map((v, i) => i).filter(i => a[i] > 0), s = a.reduce((x, y) => x + y, 0), m = MASTER_USERS.find(x => x.nama === c); return { c, d: m ? m.bagian : '-', s, hz, av: s / hz.length, rk: hz.slice().sort((x, y) => a[y] - a[x]), a }; }).filter(r => r.hz.length).sort((x, y) => y.s - x.s).map(r => `<tr><td class="px-3 py-2 font-semibold text-slate-700">${nameOf(r.c)}</td><td class="px-3 py-2 text-slate-500">${r.d}</td><td class="px-3 py-2 font-black">${r.s.toLocaleString()}</td><td class="px-3 py-2 text-emerald-600 font-bold">${hh(r.rk[0])} (${r.a[r.rk[0]]})</td><td class="px-3 py-2 text-rose-600 font-bold">${hh(r.rk[r.rk.length - 1])} (${r.a[r.rk[r.rk.length - 1]]})</td><td class="px-3 py-2 text-slate-600">${rng(r.hz.filter(i => r.a[i] >= r.av))}</td><td class="px-3 py-2">${Math.round(r.av)}</td></tr>`).join('');
+            } else {
+                head = ['Jam', 'Item', '% dari Total', 'Status'];
+                rows = range.map(i => { const v = tot[i], st = !v ? ['Tidak ada data', 'text-slate-400'] : v >= avgA ? ['Produktif', 'text-emerald-600'] : v < avgA * 0.5 ? ['Rendah', 'text-rose-600'] : ['Normal', 'text-slate-600']; return `<tr><td class="px-3 py-2 font-semibold text-slate-700">${hh(i)}–${hh(i + 1)}</td><td class="px-3 py-2 font-black">${v.toLocaleString()}</td><td class="px-3 py-2">${(v / sum * 100).toFixed(1)}%</td><td class="px-3 py-2 font-bold ${st[1]}">${st[0]}</td></tr>`; }).join('');
+            }
+            g('perfTimeTable').innerHTML = `<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr>${th(head)}</tr></thead><tbody class="divide-y divide-slate-100">${rows}</tbody></table><p class="text-[11px] text-slate-400 mt-2">Produktif = item per jam ≥ rata-rata jam aktif. Rendah = di bawah 50% rata-rata. Jam tanpa data tidak dihitung ke rata-rata.</p>`;
         }
         function perfGo(d) { window._perfPage = (window._perfPage || 0) + d; renderPerf(); }
         const _processDataOrig = processData;
@@ -1908,47 +2039,6 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const compCtx = document.getElementById('comparisonChart').getContext('2d');
-            if (comparisonChartInstance) comparisonChartInstance.destroy();
-
-            let totalLevelingFromHonda = parseInt(document.getElementById('in_out_leveling').value) || 0;
-            let totalPicking = totals.PICKER;
-            let totalPacking = totals.PACKER;
-
-            comparisonChartInstance = new Chart(compCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Leveling vs Picking', 'Picking vs Packing'],
-                    datasets: [
-                        {
-                            label: 'Leveling / Picking (1)',
-                            data: [totalLevelingFromHonda, totalPicking],
-                            backgroundColor: ['#ef4444', '#f59e0b'],
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'Picking / Packing (2)',
-                            data: [totalPicking, totalPacking],
-                            backgroundColor: ['#2563eb', '#7c3aed'],
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            font: { size: 10, weight: 'bold' },
-                            color: '#334155'
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
             });
         }
         
@@ -3501,8 +3591,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const BAGIAN = ['PENYIAPAN', 'PENGECEKAN'];
         const BAGIAN_HOME = { PENYIAPAN: 'kp-siap', PENGECEKAN: 'kp-cek' };
         const MENUS = {
-            ADMIN: ['gudang', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
-            CREW: ['gudang', 'ket', 'rcv', 'rcv-rep', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos']
+            ADMIN: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
+            CREW: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos']
         };
         let users = [], mode = 'cloud', me = null, usingDefault = false, loginTab = 'crew';
         const $ = id => document.getElementById(id);
