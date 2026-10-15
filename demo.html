@@ -390,6 +390,7 @@
         <button class="sb-item active" data-nav="gudang" onclick="switchTab('gudang')"><span class="sb-ic">📦</span>TRACK-X</button>
         <button class="sb-item" data-nav="mp" onclick="switchTab('mp')"><span class="sb-ic">👤</span>TRACK-X-MP</button>
         <button class="sb-item" data-nav="honda" onclick="switchTab('honda')"><span class="sb-ic">📊</span>Generator Laporan Honda</button>
+        <button class="sb-item" data-nav="tv" onclick="switchTab('tv')"><span class="sb-ic">📺</span>Dashboard TV</button>
 
         <div class="sb-sep"></div>
         <div class="sb-group">Kartu</div>
@@ -1224,6 +1225,24 @@ create policy "rm_all" on receiver_masuk for all using (true) with check (true);
         </div>
     </div>
 
+    <!-- DASHBOARD TV (tampilan yang sama dengan layar TV gudang) -->
+    <div id="section-tv" class="app-section p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex flex-wrap items-center gap-3">
+                <div class="flex-1" style="min-width:220px">
+                    <h1 class="text-2xl font-extrabold text-slate-800">📺 Dashboard TV</h1>
+                    <p class="text-sm text-slate-500">Tampilan yang sama persis dengan layar TV gudang. Data diperbarui otomatis tiap menit.</p>
+                </div>
+                <button onclick="tvFull()" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-sm font-bold">⛶ Layar penuh</button>
+                <button onclick="tvOpenTab()" class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold">↗ Buka di tab baru</button>
+                <button onclick="tvCopy()" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold border border-slate-300">🔗 Salin link TV</button>
+            </div>
+            <div style="aspect-ratio:16/9;background:#0a111d;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">
+                <iframe id="tvFrame" title="Dashboard TV" style="width:100%;height:100%;border:0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
     <div id="section-users" class="app-section p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
@@ -1407,13 +1426,14 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         Chart.defaults.borderColor = '#e8ebf7';
 
         function switchTab(target) {
-            const map = { gudang: 'section-gudang', honda: 'section-honda', mp: 'section-mp', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep' };
+            const map = { gudang: 'section-gudang', honda: 'section-honda', mp: 'section-mp', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep', tv: 'section-tv' };
             const accessKey = target === 'kartu' ? 'kp-' + (window.kpCurrent || 'db') : target;
             if (window.canAccess && !window.canAccess(accessKey)) return;
             document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active-app'));
             document.getElementById(map[target]).classList.add('active-app');
             document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
             if (target === 'honda') updateHondaIntegratedChart();
+            if (target === 'tv') tvOpen();
             if (target === 'gudang') refreshProduktivitas();
             if (target === 'mp') mpOpen();
             if (target === 'users' && window.authOnOpenUsers) authOnOpenUsers();
@@ -1434,6 +1454,18 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             document.querySelectorAll('.sb-item[data-grp="' + g + '"]').forEach(b => b.classList.toggle('sb-hide', !open));
         }
         function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('open'); }
+
+        // --- Dashboard TV: file DASHBOARD_TV.html harus satu folder dengan halaman ini ---
+        const TV_FILE = 'DASHBOARD_TV.html';
+        function tvUrl(abs) { const u = TV_FILE + (USE_LOCAL ? '?demo=lokal' : ''); return abs ? new URL(u, location.href).href : u; }
+        function tvOpen() { const f = document.getElementById('tvFrame'); if (f && !f.getAttribute('src')) f.setAttribute('src', tvUrl()); }
+        function tvFull() { const f = document.getElementById('tvFrame'); const fn = f.requestFullscreen || f.webkitRequestFullscreen; if (fn) fn.call(f); }
+        function tvOpenTab() { window.open(tvUrl(true), '_blank'); }
+        function tvCopy() {
+            const u = new URL(TV_FILE, location.href).href + (USE_LOCAL ? '?demo' : '');   // demo: TV memakai data contoh bawaan
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => alert('Link TV disalin:\n' + u), () => prompt('Salin link TV:', u));
+            else prompt('Salin link TV:', u);
+        }
 
         let excelData = [];
 
@@ -3609,7 +3641,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const BAGIAN = ['PENYIAPAN', 'PENGECEKAN'];
         const BAGIAN_HOME = { PENYIAPAN: 'kp-siap', PENGECEKAN: 'kp-cek' };
         const MENUS = {
-            ADMIN: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
+            ADMIN: ['gudang', 'tv', 'mp', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
             CREW: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos']
         };
         let users = [], mode = 'cloud', me = null, usingDefault = false, loginTab = 'crew';
