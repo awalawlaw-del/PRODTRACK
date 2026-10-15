@@ -2371,7 +2371,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
 
         // --- RESET DATA DI CLOUD SUPABASE ---
         async function clearHistory() { 
-            if(confirm('Reset dan hapus semua data di Penyimpanan Browser?')) { 
+            if(confirm('Reset dan hapus semua data di Cloud (Supabase)?')) { 
                 let { error } = await supabaseClient.from('gudang_data').delete().neq('id', 0); 
                 if(!error) {
                     excelData = [];
@@ -2397,14 +2397,14 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             else if (sDate) rangeText = `mulai tanggal ${sDate}`;
             else if (eDate) rangeText = `hingga tanggal ${eDate}`;
 
-            if (!confirm(`Apakah Anda yakin ingin menghapus data ${rangeText} dari Penyimpanan Browser?`)) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus data ${rangeText} dari Cloud (Supabase)?`)) {
                 return;
             }
 
             // 1. Ambil id dan data_row dari Supabase
             let { data, error } = await supabaseClient.from('gudang_data').select('id, data_row');
             if (error) {
-                alert("❌ Gagal mengambil data dari Penyimpanan Browser: " + error.message);
+                alert("❌ Gagal mengambil data dari Cloud (Supabase): " + error.message);
                 return;
             }
 
@@ -2447,9 +2447,9 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 processData();
                 updateHondaIntegratedChart();
 
-                alert(`✅ Berhasil menghapus ${idsToDelete.length} baris data ${rangeText} dari Penyimpanan Browser!`);
+                alert(`✅ Berhasil menghapus ${idsToDelete.length} baris data ${rangeText} dari Cloud (Supabase)!`);
             } else {
-                alert("❌ Gagal menghapus data dari Penyimpanan Browser: " + delError.message);
+                alert("❌ Gagal menghapus data dari Cloud (Supabase): " + delError.message);
             }
         }
 
@@ -2471,7 +2471,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     generateGlobalSummary();
                     processData();
                     updateHondaIntegratedChart();
-                    alert("✅ Data berhasil disimpan ke Penyimpanan Browser!");
+                    alert("✅ Data berhasil disimpan ke Cloud (Supabase)!");
                 } else {
                     alert("❌ Gagal menyimpan ke cloud: " + error.message);
                 }
@@ -2585,7 +2585,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
 
             if (!error) {
                 localStorage.setItem('honda_latest_date', currentDate);
-                alert(`✅ Data laporan tanggal ${currentDate} berhasil disimpan ke Penyimpanan Browser!`);
+                alert(`✅ Data laporan tanggal ${currentDate} berhasil disimpan ke Cloud (Supabase)!`);
             } else {
                 alert("❌ Gagal menyimpan ke cloud: " + error.message);
             }
@@ -2729,7 +2729,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             loaded = true;
             $('kpLocalWarn').classList.toggle('hidden', mode !== 'local');
             const b = $('kpModeBadge');
-            b.textContent = mode === 'cloud' ? '💾 Penyimpanan Browser' : '💾 Mode Lokal (browser)';
+            b.textContent = mode === 'cloud' ? '☁️ Cloud (Supabase)' : '💾 Mode Lokal (browser)';
             b.className = 'text-[11px] font-bold px-3 py-1.5 rounded-full ' + (mode === 'cloud' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700');
             renderAll();
         }
