@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUMMIT X Bursa Produktivitas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+/* Papan bursa: tiga panel (Picker, Packer, Receiver), tiap panel satu grafik kumulatif
+   dengan jalur target per sesi. Hijau = di atas jalur target, merah = di bawah. */
+:root{
+  --bg:#0a111d;          /* ruang gelap kebiruan */
+  --panel:#101a2b;
+  --panel-2:#16233a;
+  --line:#243652;
+  --fg:#e8eef9;
+  --mute:#8394b0;
+  --up:#2fd18b;          /* naik / tercapai */
+  --down:#ff5a6a;        /* turun / belum tercapai */
+  --amber:#f2b441;       /* istirahat & lembur */
+  --font-display:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --font-body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{font-size:calc(100vw/96)}           /* 20px pada layar 1920 */
+@media (max-width:900px){html{font-size:16px}}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:1rem;
+  padding-block:1rem;padding-left:max(1.2rem,env(safe-area-inset-left,0px));padding-right:max(1.2rem,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:.9rem;font-variant-numeric:tabular-nums;overflow-x:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.brand b{font-family:var(--font-display);font-size:2.1rem;letter-spacing:.06em;font-weight:700;line-height:1}
+.brand span{color:var(--mute);font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+.phase{display:flex;align-items:center;gap:.9rem;background:var(--panel);border:1px solid var(--line);border-radius:.6rem;padding:.55rem 1rem}
+.dot{width:.75rem;height:.75rem;border-radius:50%;background:var(--mute);flex:none}
+.phase.open .dot{background:var(--up);box-shadow:0 0 0 0 rgba(47,209,139,.6);animation:pulse 2s infinite}
+.phase.break .dot,.phase.ot .dot{background:var(--amber)}
+.phase.closed .dot{background:var(--mute)}
+.phase b{font-family:var(--font-display);font-size:1.5rem;letter-spacing:.05em;font-weight:600}
+.phase small{color:var(--mute);font-size:.9rem}
+.clock{text-align:right;line-height:1}
+.clock b{font-family:var(--font-display);font-size:3rem;font-weight:600;letter-spacing:.02em}
+.clock b small{font-size:1.1rem;color:var(--mute);letter-spacing:.08em;margin-left:.5rem;font-weight:500}
+.clock span{display:block;color:var(--mute);font-size:.85rem;margin-top:.25rem}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.9rem}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--ptone,var(--panel));border:1px solid var(--pline,var(--line));border-radius:.8rem;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.8rem;min-width:0;min-height:0}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem}
+.panel.p-PICKER{--ptone:#0f1c31;--pline:#22385a;--tint:#7db0f5}
+.panel.p-PACKER{--ptone:#171630;--pline:#33305a;--tint:#aa9ef0}
+.panel.p-RECEIVER{--ptone:#0e2029;--pline:#1f4150;--tint:#6cc4d6}
+.ph h2{color:var(--tint,var(--fg));margin:0;font-family:var(--font-display);font-size:1.9rem;letter-spacing:.08em;font-weight:700;line-height:1}
+.ph .tgt{color:var(--mute);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;margin-top:.25rem}
+.chip{font-family:var(--font-display);font-weight:600;font-size:1.05rem;letter-spacing:.06em;padding:.25rem .65rem;border-radius:.4rem;white-space:nowrap;text-transform:uppercase;background:var(--panel-2);color:var(--mute)}
+.chip.up{background:rgba(47,209,139,.16);color:var(--up)}
+.chip.down{background:rgba(255,90,106,.16);color:var(--down)}
+.chip.amber{background:rgba(242,180,65,.16);color:var(--amber)}
+.big{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
+.big b{font-family:var(--font-display);font-size:4.4rem;font-weight:600;line-height:.9}
+.big b.up{color:var(--up)} .big b.down{color:var(--down)}
+.big em{font-style:normal;color:var(--mute);font-size:1.2rem}
+.big .pct{font-family:var(--font-display);font-size:1.7rem;font-weight:600}
+.pct.up{color:var(--up)} .pct.down{color:var(--down)}
+.sess{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+.sc{background:rgba(255,255,255,.045);border-radius:.5rem;padding:.5rem .6rem;min-width:0}
+.sc .n{font-size:.72rem;letter-spacing:.07em;color:var(--mute);text-transform:uppercase;white-space:nowrap}
+.sc .v{font-family:var(--font-display);font-size:1.7rem;font-weight:600;line-height:1.05;margin-top:.1rem}
+.sc .v small{font-size:1rem;color:var(--mute);font-weight:500}
+.sc .s{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-top:.1rem;font-weight:600;color:var(--mute)}
+.sc.up .v,.sc.up .s{color:var(--up)} .sc.down .v,.sc.down .s{color:var(--down)} .sc.amber .v,.sc.amber .s{color:var(--amber)}
+.sub{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:rgba(255,255,255,.045);border-radius:.5rem;padding:.45rem .7rem}
+.sub .n{font-size:.72rem;letter-spacing:.07em;color:var(--mute);text-transform:uppercase}
+.sub .v{font-family:var(--font-display);font-size:1.7rem;font-weight:600;line-height:1.05}
+.sub .v small{font-size:1rem;color:var(--mute);font-weight:500}
+.sub .r{text-align:right;font-size:.8rem;color:var(--mute);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.sub.up .v,.sub.up .r{color:var(--up)} .sub.down .v,.sub.down .r{color:var(--down)}
+.bar{height:.35rem;background:rgba(255,255,255,.08);border-radius:1rem;overflow:hidden;margin-top:.3rem;min-width:7rem}
+.bar i{display:block;height:100%;background:var(--mute);border-radius:1rem}
+.sub.up .bar i{background:var(--up)} .sub.down .bar i{background:var(--down)}
+.chartwrap{flex:1;min-height:12rem;position:relative}
+svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+svg text{font-family:var(--font-body);fill:var(--mute);font-size:15px}
+svg .lbl{font-family:var(--font-display);font-weight:600;letter-spacing:.08em;font-size:16px}
+svg .tgtlbl{fill:var(--fg);font-size:14px;font-weight:600}
+.crew{display:flex;flex-direction:column;gap:.1rem}
+.ch{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem;margin-bottom:.15rem}
+.ch .n{font-size:.72rem;letter-spacing:.07em;color:var(--mute);text-transform:uppercase}
+.ch .r{font-family:var(--font-display);font-size:1.15rem;font-weight:600;letter-spacing:.04em;color:var(--fg);text-transform:uppercase;white-space:nowrap}
+.ch .r.up{color:var(--up)} .ch .r.down{color:var(--down)}
+.ch .r small{font-size:.8rem;color:var(--mute);font-weight:500}
+.pr{display:grid;grid-template-columns:7.4rem minmax(0,1fr) 5.4rem;align-items:center;gap:.6rem;height:1.7rem}
+.pr.rc{grid-template-columns:7.4rem minmax(0,1fr) 5.4rem 4.4rem}
+.pn{font-family:var(--font-display);font-size:1.1rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb{position:relative;height:.6rem;background:rgba(255,255,255,.08);border-radius:1rem}
+.pb i{position:absolute;left:0;top:0;bottom:0;background:var(--mute);border-radius:1rem}
+.pb u{position:absolute;top:-.2rem;bottom:-.2rem;width:2px;background:var(--fg);opacity:.65;text-decoration:none}
+.pr.up .pb i{background:var(--up)} .pr.down .pb i{background:var(--down)}
+.pv,.pp{font-family:var(--font-display);font-size:1.15rem;font-weight:600;text-align:right;white-space:nowrap}
+.pv small,.pp small{font-size:.8rem;color:var(--mute);font-weight:500;margin-left:.15rem}
+.pr.up .pv{color:var(--up)} .pr.down .pv{color:var(--down)}
+.pp.up{color:var(--up)} .pp.down{color:var(--down)}
+.who span{background:var(--panel-2);border-radius:.4rem;padding:.2rem .55rem;font-size:.85rem;color:var(--mute);white-space:nowrap}
+.who b{color:var(--fg);font-weight:600;margin-left:.3rem}
+.foot{display:flex;justify-content:space-between;gap:1rem;color:var(--mute);font-size:.8rem;flex-wrap:wrap}
+.foot .err{color:var(--down)}
+@keyframes pulse{70%{box-shadow:0 0 0 .7rem rgba(47,209,139,0)}100%{box-shadow:0 0 0 0 rgba(47,209,139,0)}}
+@media (prefers-reduced-motion:reduce){.phase.open .dot{animation:none}svg .pulse{display:none}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand"><b>SUMMIT X</b><span>Bursa produktivitas gudang · WH H50</span></div>
+  <div class="phase" id="phase"><i class="dot"></i><div><b id="phaseName">-</b><br><small id="phaseSub"></small></div></div>
+  <div class="clock"><b id="clock">--:--:--</b><span id="dateTxt"></span></div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="foot"><span id="sync">Menghubungkan…</span><span>Data berasal dari upload produktivitas (rekap per jam). Layar diperbarui otomatis tiap menit.</span></div>
+
+<script>
+/* ===================== PENGATURAN ===================== */
+const CFG = {
+  SUPABASE_URL: 'https://gwrkfdjukuiydczfhvbo.supabase.co',     // sama dengan web SUMMIT X
+  SUPABASE_KEY: 'sb_publishable_Dbu_NnbMHlTjiyC_xM5RQw_3Wvv5i2v',
+  TABEL: 'gudang_data',
+  HALAMAN: 4,                    // 4 x 1000 baris terbaru dibaca
+  REFRESH_MS: 60000,
+  ZONA: 'Asia/Makassar',          // WITA. Jam layar mengikuti zona ini, bukan jam komputer
+  // Target di web SUMMIT X adalah PER ORANG per hari. Target divisi = per orang x jumlah crew.
+  TARGET_PER_ORANG: { PICKER: 200, PACKER: 250, RECEIVER: 130 },
+  // Crew tetap per divisi (kode user). Jumlah crew = panjang daftar ini. BANTUAN otomatis muncul kalau ada datanya.
+  ROSTER: {
+    PICKER:   ['PKSFAHRY0806','HASANU013827','ASTMUHZU0204','AWALAW080474','BRATAS012368'],
+    PACKER:   ['PKSALIP66374','ABDURR076790','ASTMUHFA0114','ASTNURSA0208'],
+    RECEIVER: ['ABDHAR034256','ASTCITRA4298','PKSSYAHR0199','ASTTAKDI0771']
+  },
+  PALLET_PER_ORANG: 4,                                          // target pallet Receiver per orang per hari
+  // menit sejak 00:00. porsi = bagian dari target harian untuk sesi itu. Lembur tanpa target (hanya tambahan).
+  SESI: [
+    { id:'S1', nama:'SESI 1', a:8*60,  b:12*60, porsi:0.5 },
+    { id:'S2', nama:'SESI 2', a:13*60, b:17*60, porsi:0.5 },
+    { id:'OT', nama:'LEMBUR', a:17*60, b:24*60, porsi:0   }
+  ],
+  ISTIRAHAT: { a:12*60, b:13*60 },
+  AXIS: { a:8*60, b:24*60 }
+};
+const ROLES = ['PICKER','PACKER','RECEIVER'];
+CFG.CREW = { PICKER:CFG.ROSTER.PICKER.length, PACKER:CFG.ROSTER.PACKER.length, RECEIVER:CFG.ROSTER.RECEIVER.length };
+
+const NAMA = {"ASTBARMA0113":"BANTUAN","ASTCITRA4298":"YUDA","ASTMUHFA0114":"ADI WIJAYA","ASTMUHZU0204":"ZULFIKAR","AWALAW080474":"ALIP 2","BRATAS012368":"HADI","HASANU013827":"ADIT","PKSFAHRY0806":"AHMAD","PKSSYAHR0199":"ALUL","ABDURR076790":"SATYA","ASTNURSA0208":"SALAM","ASTTAKDI0771":"TAKDIR","PKSALIP66374":"ALIP 1","ABDHAR034256":"DANDI"};
+
+/* ===================== UTIL ===================== */
+const q = new URLSearchParams(location.search);
+const LOKAL = q.get('demo')==='lokal';            // ?demo=lokal : baca data demo dari localStorage aplikasi (dipakai di tab Dashboard TV versi demo)
+const DEMO = q.has('demo') && !LOKAL;             // ?demo : data contoh bawaan
+const $ = id => document.getElementById(id);
+const p2 = n => String(n).padStart(2,'0');
+const hm = m => p2(Math.floor(m/60)) + ':' + p2(Math.floor(m%60));
+const nf = n => Math.round(n).toLocaleString('id-ID');
+function zona(d){                         // bagian tanggal/jam menurut CFG.ZONA
+  const o={}; new Intl.DateTimeFormat('en-GB',{timeZone:CFG.ZONA,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    .formatToParts(d||new Date()).forEach(p=>{o[p.type]=p.value}); return o;
+}
+const todayStr = () => { const z=zona(); return z.year+'-'+z.month+'-'+z.day; };
+const tgl = () => q.get('tgl') || todayStr();
+const nextDay = t => { const d=new Date(t+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+1); return d.toISOString().slice(0,10); };
+const hmsZona = d => { const z=zona(d); return z.hour+':'+z.minute+':'+z.second; };
+function nowMin(){
+  if (q.get('jam')) { const [h,m]=q.get('jam').split(':'); return +h*60 + (+m||0); }
+  if (q.get('tgl') && q.get('tgl') !== todayStr()) return 24*60;
+  const z=zona(); return +z.hour*60 + +z.minute + +z.second/60;
+}
+function normalizeDate(raw){
+  if (raw==null || raw==='') return '';
+  const num = Number(raw);
+  if (!isNaN(num) && num>10000 && num<99999){ const d=new Date(Math.round((num-25569)*86400000)); return d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()); }
+  if (raw instanceof Date) return raw.getFullYear()+'-'+p2(raw.getMonth()+1)+'-'+p2(raw.getDate());
+  const s=String(raw).trim().split(' ')[0].split('T')[0], m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  return m ? m[3]+'-'+p2(m[2])+'-'+p2(m[1]) : s;
+}
+function minuteOf(v){                     // menit sejak 00:00, null kalau Jam kosong
+  if (v==null || v==='') return null;
+  if (typeof v==='number') return (v>=0 && v<1) ? Math.floor(v*1440+1e-6) : (v>=0&&v<24 ? v*60 : null);
+  const m=String(v).match(/(\d{1,2})\s*[:.]\s*(\d{2})/); if(!m) return null;
+  const h=+m[1]; return h<=23 ? h*60 + +m[2] : null;
+}
+const keyOf = (row, keys) => Object.keys(row).find(x => keys.some(k => x.toLowerCase().includes(k)));
+function bagianOf(raw){
+  const b=String(raw||'').toUpperCase();
+  if (b.includes('PICK')||b.includes('SIAP')) return 'PICKER';
+  if (b.includes('PACK')||b.includes('CEK')) return 'PACKER';
+  if (b.includes('RECEIV')) return 'RECEIVER';
+  return null;
+}
+
+/* ===================== DATA ===================== */
+const REV = {}; Object.keys(NAMA).forEach(k=>{ REV[NAMA[k].toUpperCase()]=k; });
+const kodeDari = n => { const u=String(n||'').trim().toUpperCase(); return REV[u] || u; };
+let ROWS = [], PALLET = { done:null, masuk:null, by:{} }, sync = { ok:false, at:null, err:null };
+
+function demoRows(){
+  // Contoh data hanya untuk pratinjau (?demo)
+  const plan = {
+    PICKER:  { names:['PKSFAHRY0806','HASANU013827','ASTMUHZU0204','AWALAW080474','BRATAS012368'], h:{8:70,9:110,10:125,11:135,12:30,13:150,14:90} },
+    PACKER:  { names:['PKSALIP66374','ABDURR076790','ASTMUHFA0114','ASTNURSA0208'], h:{8:130,9:160,10:170,11:180,12:0,13:190,14:150} },
+    RECEIVER:{ names:['ABDHAR034256','ASTCITRA4298','PKSSYAHR0199','ASTTAKDI0771'], h:{8:38,9:55,10:50,11:45,12:0,13:60,14:30} }
+  };
+  const out=[];
+  ROLES.forEach(r => Object.entries(plan[r].h).forEach(([h,t]) => {
+    if (!t) return; const n=plan[r].names; let left=t;
+    const W=[1.25,1,0.85,1.1,0.8], sw=n.reduce((a,_,i)=>a+W[i],0);
+    n.forEach((nm,i)=>{ const v = i===n.length-1 ? left : Math.round(t*W[i]/sw); left-=v; if(v>0) out.push({Tanggal:tgl(),Jam:p2(h)+':00',Nama:nm,Bagian:r,Jumlah:v}); });
+  }));
+  return out;
+}
+
+async function load(){
+  if (LOKAL){
+    const rd = n => { try{ return JSON.parse(localStorage.getItem('lsdb_'+n)||'[]'); }catch(_){ return []; } };
+    ROWS = rd('gudang_data').slice().sort((a,b)=>(b.id||0)-(a.id||0)).map(d=>d.data_row);
+    const t0=tgl(), onDay = r => String(r.tgl||'').slice(0,10)===t0;
+    const pl = rd('receiver_pallet').filter(onDay), mk = rd('receiver_masuk').filter(onDay);
+    PALLET = { done: pl.reduce((a,r)=>a+(parseInt(r.pallet,10)||0),0), masuk: mk.length ? mk.reduce((a,r)=>a+(parseInt(r.pallet,10)||0),0) : null, by:{} };
+    pl.forEach(r=>{ const k=kodeDari(r.nama); PALLET.by[k]=(PALLET.by[k]||0)+(parseInt(r.pallet,10)||0); });
+    sync = { ok:true, at:new Date(), err:null, demo:true }; return;
+  }
+  if (DEMO){ ROWS = demoRows(); PALLET = { done:9, masuk:14, by:{ABDHAR034256:3,ASTCITRA4298:2,PKSSYAHR0199:3,ASTTAKDI0771:1} }; sync = { ok:true, at:new Date(), err:null, demo:true }; return; }
+  try{
+    if (typeof supabase === 'undefined') throw new Error('library Supabase tidak termuat (cek internet)');
+    const cl = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
+    let all=[];
+    for (let i=0;i<CFG.HALAMAN;i++){
+      const { data, error } = await cl.from(CFG.TABEL).select('data_row').order('id',{ascending:false}).range(i*1000, i*1000+999);
+      if (error) throw error;
+      all = all.concat(data.map(d=>d.data_row));
+      if (data.length < 1000) break;
+    }
+    ROWS = all; sync = { ok:true, at:new Date(), err:null };
+    // pallet Receiver (menu Input Receiver). Kegagalan di sini tidak menghentikan dashboard.
+    try{
+      const t0=tgl(), t1=nextDay(t0);
+      const p = await cl.from('receiver_pallet').select('nama,pallet').gte('tgl',t0).lt('tgl',t1);
+      PALLET.done = p.error ? null : (p.data||[]).reduce((a,r)=>a+(parseInt(r.pallet,10)||0),0);
+      PALLET.by = {};
+      if (!p.error) (p.data||[]).forEach(r=>{ const k=kodeDari(r.nama); PALLET.by[k]=(PALLET.by[k]||0)+(parseInt(r.pallet,10)||0); });
+      const m = await cl.from('receiver_masuk').select('pallet').gte('tgl',t0).lt('tgl',t1);
+      PALLET.masuk = (m.error || !(m.data||[]).length) ? null : m.data.reduce((a,r)=>a+(parseInt(r.pallet,10)||0),0);
+    }catch(_){ PALLET = { done:null, masuk:null, by:{} }; }
+  }catch(e){ sync.ok=false; sync.err = (e && e.message) || String(e); }
+}
+
+/* ===================== HITUNG ===================== */
+// Satu baris upload = blok jam. Titik di grafik diletakkan di akhir jam (jam 10:00 -> 11:00).
+function plotAt(m){ return Math.min(CFG.AXIS.b, Math.max(CFG.AXIS.a, (Math.floor(m/60)+1)*60)); }
+function sessionOf(p){ for (const s of CFG.SESI) if (p <= s.b) return s; return CFG.SESI[CFG.SESI.length-1]; }
+
+function compute(role, now){
+  const D = CFG.TARGET_PER_ORANG[role]*CFG.CREW[role], ev=[], by={}; let untimed=0;
+  ROWS.forEach(row=>{
+    if (normalizeDate(row[keyOf(row,['tanggal','tgl','date'])]) !== tgl()) return;
+    if (bagianOf(row[keyOf(row,['bagian','divisi','dept'])]) !== role) return;
+    const qty = parseInt(row[keyOf(row,['jumlah','qty','item'])]||0)||0; if(!qty) return;
+    const nm = String(row[keyOf(row,['nama','user'])]||'').trim().toUpperCase();
+    by[nm]=(by[nm]||0)+qty;
+    const m = minuteOf(row[keyOf(row,['jam','waktu','time','hour'])]);
+    if (m==null){ untimed+=qty; return; }
+    if (m > now) return;                       // belum terjadi (untuk pratinjau jam tertentu)
+    ev.push({ m, p:plotAt(m), qty });
+  });
+  const total = ev.reduce((a,e)=>a+e.qty,0) + untimed;
+  const cumAt = t => ev.filter(e=>e.p<=t).reduce((a,e)=>a+e.qty,0);
+  const cumAll = ev.reduce((a,e)=>a+e.qty,0);
+
+  // sesi: jumlah aktual, level awal jalur target, status
+  let lev=0; const ses=[];
+  CFG.SESI.forEach(s=>{
+    const g = D*s.porsi, A = ev.filter(e=>sessionOf(e.p)===s).reduce((a,e)=>a+e.qty,0);
+    const started = now >= s.a, finished = now >= s.b;
+    const elapsed = Math.max(0, Math.min(1,(now-s.a)/(s.b-s.a)));
+    let status='wait';
+    if (s.porsi>0){
+      if (finished) status = A>=g ? 'up':'down';
+      else if (started) status = A >= g*elapsed ? 'up':'down';
+    } else status = (started && A>0) ? 'amber' : 'wait';
+    ses.push({ s, g, A, L:lev, started, finished, status });
+    lev = finished ? lev + A : lev + g;       // sesi selesai -> jalur berikutnya mulai dari angka nyata
+  });
+  return { role, D, ev, total, untimed, by, cumAt, cumAll, ses };
+}
+
+function paceFrac(now){                   // porsi target harian yang seharusnya sudah tercapai sekarang
+  let f=0; CFG.SESI.forEach(s=>{ if(s.porsi>0) f += s.porsi*Math.max(0,Math.min(1,(now-s.a)/(s.b-s.a))); }); return f;
+}
+function overall(c, now){
+  const act = c.ses.filter(x=>x.g>0 && x.started);
+  const last = act[act.length-1];
+  if (!last) return { cls:'', txt:'Belum buka' };
+  if (c.total >= c.D) return { cls:'up', txt:'Target harian tercapai' };
+  if (last.status==='up') return { cls:'up', txt: last.finished ? last.s.nama+' tercapai' : 'Di atas jalur' };
+  return { cls:'down', txt: last.finished ? last.s.nama+' belum capai' : 'Di bawah jalur' };
+}
+
+/* ===================== GRAFIK (SVG) ===================== */
+function chart(c, now, H){
+  H = H || 380;
+  const W=600, L=46,R=10,T=40,B=34, x0=L,x1=W-R,y0=H-B,y1=T;
+  const A=CFG.AXIS, X=m=>x0+(m-A.a)/(A.b-A.a)*(x1-x0);
+  const ramps = c.ses.filter(s=>s.g>0);
+  const planEnd = Math.max(...ramps.map(r=>r.L+r.g), c.D);
+  const maxV = Math.max(planEnd, c.cumAll+c.untimed, 10)*1.1;
+  const raw = maxV/5, pw = Math.pow(10, Math.floor(Math.log10(raw))), step = [1,2,2.5,5,10].map(k=>k*pw).find(k=>k>=raw), top = Math.ceil(maxV/step)*step;
+  const Y=v=>y0-(v/top)*(y0-y1);
+  const ISTR=CFG.ISTIRAHAT;
+  let s=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Grafik ${c.role}">
+  <defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="rgba(242,180,65,.05)"/><line x1="0" y1="0" x2="0" y2="8" stroke="rgba(242,180,65,.28)" stroke-width="2"/></pattern></defs>`;
+  // pita sesi
+  CFG.SESI.forEach(se=>{
+    const isOT = se.porsi===0;
+    s+=`<rect x="${X(se.a)}" y="${y1}" width="${X(se.b)-X(se.a)}" height="${y0-y1}" fill="${isOT?'rgba(242,180,65,.06)':'rgba(255,255,255,.025)'}"/>`;
+    s+=`<text class="lbl" x="${(X(se.a)+X(se.b))/2}" y="${T-22}" text-anchor="middle" style="fill:${isOT?'var(--amber)':'var(--fg)'}">${se.nama}</text>`;
+    s+=`<text x="${(X(se.a)+X(se.b))/2}" y="${T-6}" text-anchor="middle" style="font-size:13px">${hm(se.a)}–${hm(se.b)}</text>`;
+  });
+  s+=`<rect x="${X(ISTR.a)}" y="${y1}" width="${X(ISTR.b)-X(ISTR.a)}" height="${y0-y1}" fill="url(#hatch)"/>`;
+  s+=`<text class="lbl" transform="translate(${(X(ISTR.a)+X(ISTR.b))/2+5},${(y0+y1)/2}) rotate(-90)" text-anchor="middle" style="fill:var(--amber);font-size:15px">ISTIRAHAT</text>`;
+  // grid & sumbu
+  for(let v=0; v<=top; v+=step){
+    s+=`<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1" ${v?'stroke-dasharray="2 5"':''}/>`;
+    s+=`<text x="${x0-8}" y="${Y(v)+5}" text-anchor="end">${v}</text>`;
+  }
+  for(let m=A.a; m<=A.b; m+=60) s+=`<text x="${X(m)}" y="${y0+22}" text-anchor="middle">${p2(m/60)}</text>`;
+  // garis target harian
+  s+=`<line x1="${x0}" x2="${x1}" y1="${Y(c.D)}" y2="${Y(c.D)}" stroke="var(--fg)" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="6 5"/>`;
+  s+=`<text x="${x0+6}" y="${Y(c.D)-6}" style="font-size:13px;fill:var(--fg);fill-opacity:.7">TARGET HARIAN ${nf(c.D)}</text>`;
+  // jalur target per sesi
+  ramps.forEach(r=>{
+    s+=`<line x1="${X(r.s.a)}" y1="${Y(r.L)}" x2="${X(r.s.b)}" y2="${Y(r.L+r.g)}" stroke="var(--fg)" stroke-opacity=".8" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+    s+=`<text class="tgtlbl" x="${X(r.s.b)-4}" y="${Y(r.L+r.g)-8}" text-anchor="end">+${nf(r.g)}</text>`;
+  });
+  // garis aktual per segmen
+  const ep=Math.min(now, A.b);
+  if (ep > A.a){
+    const pts=[[A.a, c.cumAt(A.a)]];
+    for(let h=A.a+60; h<=Math.floor(ep/60)*60; h+=60){
+      if (h===ISTR.b) pts.push([ISTR.b, c.cumAt(ISTR.a)]);       // datar saat istirahat, lalu lompat
+      pts.push([h, c.cumAt(h)]);
+    }
+    if (ep > pts[pts.length-1][0]){
+      if (ep>ISTR.a && ep<ISTR.b) pts.push([ep, c.cumAt(ISTR.a)]);
+      else pts.push([ep, c.cumAll]);
+    }
+    const rampAt=(t)=>{ const r=ramps.find(r=>t>r.s.a && t<=r.s.b+0.001); if(!r) return null; return r.L + r.g*(t-r.s.a)/(r.s.b-r.s.a); };
+    for(let i=1;i<pts.length;i++){
+      const [ta,va]=pts[i-1],[tb,vb]=pts[i];
+      const inBreak = tb<=ISTR.b && ta>=ISTR.a && va===vb;
+      let col='var(--amber)', fillc='rgba(242,180,65,.12)';
+      if (!inBreak){
+        const r=ramps.find(r=>tb>r.s.a && tb<=r.s.b+0.001 || (tb===ISTR.b && r.s.a===ISTR.b));
+        if (r){ const need = r.L + r.g*Math.max(0,Math.min(1,(tb-r.s.a)/(r.s.b-r.s.a))); const ok = vb >= need - 1e-6; col = ok?'var(--up)':'var(--down)'; fillc = ok?'rgba(47,209,139,.16)':'rgba(255,90,106,.16)'; }
+      }
+      s+=`<path d="M${X(ta)},${Y(va)} L${X(tb)},${Y(vb)} L${X(tb)},${y0} L${X(ta)},${y0} Z" fill="${fillc}"/>`;
+      s+=`<line x1="${X(ta)}" y1="${Y(va)}" x2="${X(tb)}" y2="${Y(vb)}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+    }
+    const last=pts[pts.length-1], lc = (c.ses.find(x=>x.started&&!x.finished&&x.g>0)||{}).status;
+    const dotCol = lc==='down'?'var(--down)':(lc==='up'?'var(--up)':'var(--amber)');
+    s+=`<circle class="pulse" cx="${X(last[0])}" cy="${Y(last[1])}" r="9" fill="${dotCol}" opacity=".25"/><circle cx="${X(last[0])}" cy="${Y(last[1])}" r="5.5" fill="${dotCol}" stroke="var(--panel)" stroke-width="2"/>`;
+    const ty = Math.max(y1+14, Y(last[1])-14), anchor = X(last[0])>x1-50 ? 'end':'middle';
+    s+=`<text x="${X(last[0])}" y="${ty}" text-anchor="${anchor}" style="fill:var(--fg);font-size:18px;font-weight:600">${nf(last[1])}</text>`;
+    if (now>=A.a && now<A.b) s+=`<line x1="${X(now)}" x2="${X(now)}" y1="${y1}" y2="${y0}" stroke="var(--fg)" stroke-opacity=".25" stroke-dasharray="3 4"/>`;
+  }
+  s+=`</svg>`; return s;
+}
+
+/* ===================== TAMPILAN ===================== */
+function phase(now){
+  const [S1,S2,OT]=CFG.SESI, I=CFG.ISTIRAHAT, left=m=>{ const d=Math.max(0,Math.ceil(m)); return d>=60 ? Math.floor(d/60)+' j '+(d%60)+' mnt' : d+' mnt'; };
+  if (now<S1.a) return { cls:'closed', n:'BELUM BUKA', sub:'Buka '+hm(S1.a)+' · '+left(S1.a-now)+' lagi' };
+  if (now<S1.b) return { cls:'open', n:'SESI 1 · BUKA', sub:'Tutup '+hm(S1.b)+' · '+left(S1.b-now)+' lagi' };
+  if (now<I.b)  return { cls:'break', n:'ISTIRAHAT', sub:'Lanjut '+hm(I.b)+' · '+left(I.b-now)+' lagi' };
+  if (now<S2.b) return { cls:'open', n:'SESI 2 · BUKA', sub:'Close '+hm(S2.b)+' · '+left(S2.b-now)+' lagi' };
+  if (now<OT.b) return { cls:'ot', n:'LEMBUR', sub:'Sampai '+hm(OT.b) };
+  return { cls:'closed', n:'TUTUP', sub:'Sesi hari ini selesai' };
+}
+
+function panel(c, now, maxRows){
+  const o=overall(c,now), pct=Math.round(c.total/c.D*100);
+  const cards = c.ses.map(x=>{
+    const lab = { up: x.finished?'Tercapai':'Di atas jalur', down: x.finished?'Belum capai':'Di bawah jalur', amber:'Tambahan', wait: x.started?'':'Belum mulai' }[x.status];
+    const val = x.g>0 ? `${nf(x.A)}<small> / ${nf(x.g)}</small>` : `+${nf(x.A)}`;
+    return `<div class="sc ${x.status==='wait'?'':x.status}"><div class="n">${x.s.nama} ${hm(x.s.a)}–${hm(x.s.b)}</div><div class="v">${x.status==='wait'&&!x.A?'–':val}</div><div class="s">${lab||'&nbsp;'}</div></div>`;
+  }).join('');
+  const tgt=CFG.TARGET_PER_ORANG[c.role], frac=paceFrac(now), started=now>=CFG.SESI[0].a, dayEnd=now>=CFG.SESI[1].b;
+  const isR = c.role==='RECEIVER', ptgt=CFG.PALLET_PER_ORANG;
+  const codes = CFG.ROSTER[c.role].slice();
+  Object.keys(c.by).forEach(k=>{ if(!codes.includes(k) && c.by[k]>0) codes.push(k); });     // misal BANTUAN
+  codes.sort((a,b)=>(c.by[b]||0)-(c.by[a]||0));
+  const rows = codes.map(k=>{
+    const v=c.by[k]||0, st = !started ? '' : (v >= tgt*frac-1e-9 ? 'up':'down');
+    let pal=''; if (isR){ const pv=PALLET.by[k]||0, ps = pv>=ptgt?'up':(dayEnd?'down':''); pal=`<span class="pp ${PALLET.done==null?'':ps}">${PALLET.done==null?'–':pv}<small>/${ptgt} plt</small></span>`; }
+    return `<div class="pr ${st} ${isR?'rc':''}"><span class="pn">${NAMA[k]||k}</span><span class="pb"><i style="width:${Math.min(100,v/tgt*100)}%"></i><u style="left:${Math.min(100,frac*100)}%"></u></span><span class="pv">${nf(v)}<small>/${nf(tgt)}</small></span>${pal}</div>`;
+  }).join('');
+  let head;
+  if (isR){
+    const pt=ptgt*CFG.CREW.RECEIVER, pd=PALLET.done, ps = pd==null ? '' : (pd>=pt ? 'up' : (dayEnd ? 'down':''));
+    head = `<div class="ch"><span class="n">Per orang · ${nf(tgt)} item · ${ptgt} pallet</span><span class="r ${ps}">Pallet ${pd==null?'–':nf(pd)}<small> / ${nf(pt)}${PALLET.masuk!=null?' · masuk '+nf(PALLET.masuk):''}</small></span></div>`;
+  } else {
+    head = `<div class="ch"><span class="n">Per orang · target ${nf(tgt)}</span><span class="r ${c.total>=c.D?'up':''}">Rata-rata ${nf(c.total/CFG.CREW[c.role])}<small> / ${nf(tgt)}</small></span></div>`;
+  }
+  const who = `<div class="crew" style="min-height:calc(${maxRows} * 1.8rem + 1.5rem)">${head}${rows}</div>`;
+  return `<section class="panel p-${c.role}">
+    <div class="ph"><div><h2>${c.role}</h2><div class="tgt">${nf(CFG.TARGET_PER_ORANG[c.role])} / orang × ${CFG.CREW[c.role]} crew</div></div><span class="chip ${o.cls}">${o.txt}</span></div>
+    <div class="big"><b class="${o.cls}">${nf(c.total)}</b><em>/ ${nf(c.D)}</em><span class="pct ${o.cls}">${pct}%</span></div>
+    <div class="sess">${cards}</div>
+    <div class="chartwrap">${chart(c,now)}</div>
+    ${who}
+  </section>`;
+}
+
+function render(){
+  const now=nowMin(), ph=phase(now);
+  $('phase').className='phase '+ph.cls; $('phaseName').textContent=ph.n; $('phaseSub').textContent=ph.sub;
+  const cs = ROLES.map(r=>compute(r,now));
+  const maxRows = Math.max(...cs.map(c=>{ const set=new Set(CFG.ROSTER[c.role]); Object.keys(c.by).forEach(k=>{ if(c.by[k]>0) set.add(k); }); return set.size; }));
+  $('grid').innerHTML = cs.map(c=>panel(c,now,maxRows)).join('');
+  document.querySelectorAll('.chartwrap').forEach((w,i)=>{        // grafik mengikuti ruang yang tersedia
+    const r=w.getBoundingClientRect(); if(!r.width||!r.height) return;
+    w.innerHTML = chart(cs[i], now, Math.max(260, Math.min(700, Math.round(600*r.height/r.width))));
+  });
+  const d=new Date(tgl()+'T00:00:00Z');
+  $('dateTxt').textContent = d.toLocaleDateString('id-ID',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' · WITA';
+  const sy=$('sync');
+  if (sync.demo) sy.innerHTML='MODE DEMO · data contoh, bukan data asli';
+  else if (sync.ok) sy.textContent='Data ditarik '+hmsZona(sync.at)+' WITA';
+  else sy.innerHTML='<span class="err">Gagal menarik data: '+String(sync.err||'').replace(/[<>&]/g,'')+'</span>'+(sync.at?' · terakhir berhasil '+hmsZona(sync.at):'');
+}
+function tick(){
+  const m=q.get('jam'); if (m){ $('clock').innerHTML=m+':00<small>WITA</small>'; return; }
+  $('clock').innerHTML=hmsZona()+'<small>WITA</small>';
+}
+async function cycle(){ await load(); render(); }
+let rz; window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,200)});
+tick(); setInterval(tick,1000); setInterval(render,30000);
+cycle(); setInterval(cycle, CFG.REFRESH_MS);
+</script>
+</body>
+</html>
