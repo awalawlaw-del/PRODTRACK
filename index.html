@@ -1647,6 +1647,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             if (stage === 'LEVELING') { const z = witaParts(d); return z.day + '.' + z.month + '.' + z.year; }
             return d.toLocaleString('id-ID', { timeZone: TZ_APP, dateStyle: 'short', timeStyle: 'short' });
         }
+        const plIsEmg = r => /emerg/i.test(String(r.kode || ''));   // OS GR: Storage Bin EMERGENCY
         function plGroup(rows) {
             const m = new Map();
             rows.forEach(r => { const k = r.gkey || r.ref_no || ('id' + r.id); if (!m.has(k)) m.set(k, { start_at: r.start_at }); });
@@ -1687,13 +1688,13 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
                     if (!data.length) return alert('File kosong.');
                     const keys = Object.keys(data[0]), pick = re => keys.find(k => re.test(k));
-                    const cTgl = (stage === 'GR' ? pick(/last.?move/i) : null) || pick(/tgl|tanggal|date|waktu|created|release|rilis|posting/i);
+                    const cTgl = (stage === 'GR' ? pick(/last.?(move|mvmnt)/i) : null) || pick(/tgl|tanggal|date|waktu|created|release|rilis|posting/i);
                     if (!cTgl) return alert('Kolom tanggal tidak ditemukan. Beri judul kolom yang mengandung ' + (stage === 'GR' ? '"Last Move", ' : '') + '"Tgl", "Tanggal", "Date", atau "Waktu".\nKolom terbaca: ' + keys.join(', '));
                     const cNo = (stage === 'GR' ? pick(/material|matnr/i) : null) || pick(/deliver|^dn$|^do$|doc|ref|nomor|^no/i) || keys[0];
-                    const cKode = (stage === 'GI' ? keys.find(k => /ship.?to/i.test(k) && !/name|nama/i.test(k)) : null) || pick(/kode|code|sold.?to/i);   // OS GI: Ship-to party -> KODE DEALER
+                    const cKode = (stage === 'GI' ? keys.find(k => /ship.?to/i.test(k) && !/name|nama/i.test(k)) : null) || (stage === 'GR' ? pick(/storage.?bin|^bin$/i) : null) || pick(/kode|code|sold.?to/i);   // OS GI: Ship-to party -> KODE DEALER | OS GR: Storage Bin disimpan di kolom kode
                     const cNama = pick(/nama|name|cust/i) || keys.find(k => /dealer/i.test(k) && k !== cKode);
                     const cMat = pick(/material|matnr/i);
-                    const cQty = pick(/qty|quantity|jumlah/i) || pick(/item/i);
+                    const cQty = pick(/qty|quantity|jumlah|total.?stock/i) || pick(/item/i);
                     const rows = []; let bad = 0;
                     data.forEach(r => {
                         const d = plDate(r[cTgl]); if (!d) { bad++; return; }
@@ -1741,10 +1742,14 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 const pct = n ? Math.round(late / n * 100) : 0;
                 const col = !n ? '#cbd5e1' : (late / n > 0.3 ? '#ef4444' : (late ? '#f59e0b' : '#10b981'));
                 const unit = !n ? (PL_AUTO[s.k] ? 'tidak ada outstanding' : (s.note || 'belum ada data'))
-                    : (s.k === 'LEVELING' || PL_AUTO[s.k] ? 'delivery outstanding' : (s.k === 'GR' ? 'material outstanding' : 'dokumen outstanding'));
+                    : (s.k === 'LEVELING' || PL_AUTO[s.k] ? 'delivery outstanding' : (s.k === 'GR' ? 'total all · material outstanding' : 'dokumen outstanding'));
                 let stats = '';
                 if (n) {
-                    if (s.k === 'GR') stats += stat('Total qty', fmtN(rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)));
+                    if (s.k === 'GR') {
+                        const nEmg = rows.filter(plIsEmg).length;
+                        stats += stat('Emergency', `<span style="color:#ef4444">${fmtN(nEmg)}</span>`) + stat('Normal', fmtN(rows.length - nEmg)) +
+                            stat('Total qty', fmtN(rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)));
+                    }
                     else if (totMat) stats += stat('Total material', fmtN(totMat));
                     if (s.k !== 'GI') stats += stat('Rata-rata', plFmt(avg)) + stat('Terlama', plFmt(mx)) +
                         stat('Lewat target', `<span style="color:${col}">${late} (${pct}%)</span>`) +
@@ -1775,7 +1780,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'NO. KARTU', v: r => plEsc(r.kartu || '-') }, { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) },
                     { h: 'TOTAL MATERIAL', c: 'pl-r', v: qn }, LEAD]
                 : plSel === 'GR' ? [
-                    { h: 'MATERIAL', v: r => mono(r.material || r.ref_no) }, { h: 'QTY', c: 'pl-r', v: qn }, { h: 'LAST MOVE', v: r => plTglStr(r.start_at, 'LEVELING') }, LEAD]
+                    { h: 'MATERIAL', v: r => mono(r.material || r.ref_no) }, { h: 'QTY', c: 'pl-r', v: qn }, { h: 'STORAGE BIN', v: r => r.kode ? `<span class="pl-pill ${plIsEmg(r) ? 'pl-bad' : 'pl-ok'}">${plEsc(r.kode)}</span>` : '' }, { h: 'LAST MOVE', v: r => plTglStr(r.start_at, 'LEVELING') }, LEAD]
                 : plSel === 'GI' ? [
                     { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'KODE DEALER', v: r => plEsc(r.kode) }, { h: 'CUSTOMER', c: 'pl-w', v: r => plEsc(r.cust) },
                     { h: 'MATERIAL', v: r => mono(r.material) }, { h: 'QTY', c: 'pl-r', v: qn }]
