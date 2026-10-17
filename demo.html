@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Summit X Demo</title>
 <style>body{margin:0}</style>
-</head>
-<body>
 <script>
 /* Penyimpanan demo diberi awalan sendiri supaya tidak bercampur dengan aplikasi asli di domain yang sama */
 const DLS = (function () {
@@ -19,6 +17,8 @@ const DLS = (function () {
     };
 })();
 </script>
+</head>
+<body>
 <script>document.body.className = "bg-slate-50 font-sans m-0 p-0";</script>
 
     
@@ -1351,6 +1351,14 @@ alter table pipeline_data enable row level security;
 create policy "pipeline_all" on pipeline_data for all using (true) with check (true);</pre>
                 </div>
             </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <input id="plSearch" type="search" autocomplete="off" oninput="plSearchRender()" placeholder="Cari di semua tahap: material, nomor delivery / dokumen, dealer, kode, nomor TO, no. kartu, storage bin..." class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="plEl('plSearch').value='';plSearchRender()" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold border border-slate-300">Hapus</button>
+                </div>
+                <div id="plSearchRes" class="hidden mt-3"></div>
+            </div>
             <div id="plCards" class="flex flex-wrap items-stretch gap-2 mb-4"></div>
             <div id="plDetail" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5"></div>
         </div>
@@ -1872,6 +1880,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             });
             plEl('plCards').className = 'pl-flow';
             plEl('plCards').innerHTML = html;
+            plSearchRender();
 
             const st = PL_STAGES.find(x => x.k === plSel), rows = plStageRows(plSel), t = PL_T, auto = !!PL_AUTO[plSel];
             const list = rows.map(r => Object.assign({ age: plAgeH(r.start_at, plSel) }, r)).sort((a, b) => b.age - a.age || String(a.ref_no).localeCompare(String(b.ref_no)));
@@ -1899,6 +1908,34 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             plEl('plDetail').innerHTML = `<div class="pl-dhead"><div><div class="pl-dtitle">${st.ic} Detail ${st.n}</div>` +
                 `<div class="pl-dsub">${list.length > LIM ? LIM + ' terlama dari ' + fmtN(list.length) + ' baris' : fmtN(list.length) + ' baris'}</div></div></div>` +
                 (list.length ? `<div class="pl-wrap"><table class="pl-tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` : empty);
+        }
+        // Pencarian gabungan: semua tahap (OS GR, Leveling, Picking, Packing, Good Issue, Shipment) sekaligus
+        function plSearchRender() {
+            const box = plEl('plSearchRes'), inp = plEl('plSearch'); if (!box || !inp) return;
+            const terms = String(inp.value || '').toLowerCase().split(/\s+/).filter(Boolean);
+            if (!terms.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+            const txt = v => String(v == null ? '' : v), hits = [], per = {};
+            PL_STAGES.forEach(s => plStageRows(s.k).forEach(r => {
+                const hay = [r.ref_no, r.material, r.cust, r.kode, r.to, r.kartu].map(v => txt(v).toLowerCase()).join(' ');
+                if (!terms.every(t => hay.includes(t))) return;
+                per[s.k] = (per[s.k] || 0) + 1;
+                hits.push({ s, r, age: plAgeH(r.start_at, s.k) });
+            }));
+            hits.sort((a, b) => PL_STAGES.indexOf(a.s) - PL_STAGES.indexOf(b.s) || b.age - a.age);
+            const LIM = 200, mono = v => `<span class="pl-mono">${plEsc(v)}</span>`;
+            const chips = PL_STAGES.filter(s => per[s.k]).map(s => `<button onclick="plPick('${s.k}')" class="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">${s.ic} ${s.n}: ${per[s.k]}</button>`).join(' ');
+            const rowsHtml = hits.slice(0, LIM).map(h => {
+                const r = h.r, gr = h.s.k === 'GR';
+                const kode = r.kode ? (gr ? `<span class="pl-pill ${plIsEmg(r) ? 'pl-bad' : 'pl-ok'}">${plEsc(r.kode)}</span>` : plEsc(r.kode)) : '';
+                return '<tr>' + `<td>${h.s.ic} ${plEsc(h.s.n)}</td><td>${gr ? mono(r.material || r.ref_no) : mono(r.ref_no)}</td><td>${gr ? '' : mono(r.material || '')}</td>` +
+                    `<td>${plEsc(r.cust)}</td><td>${kode}</td><td>${mono([r.to, r.kartu].filter(Boolean).join(' / '))}</td><td class="pl-r">${Number(r.qty) ? Number(r.qty).toLocaleString('id-ID') : ''}</td>` +
+                    `<td>${plTglStr(r.start_at, 'LEVELING')}</td><td class="pl-c"><span class="pl-pill ${h.age > PL_T ? 'pl-bad' : 'pl-ok'}">${plFmt(h.age)}</span></td></tr>`;
+            }).join('');
+            box.classList.remove('hidden');
+            box.innerHTML = hits.length
+                ? `<div class="flex flex-wrap items-center gap-2 mb-2"><b class="text-sm text-slate-700">${hits.length.toLocaleString('id-ID')} hasil</b>${chips}${hits.length > LIM ? `<span class="text-xs text-slate-400">(${LIM} teratas ditampilkan)</span>` : ''}</div>` +
+                  `<div class="pl-wrap" style="max-height:360px"><table class="pl-tbl"><thead><tr><th>TAHAP</th><th>NO. DOKUMEN / MATERIAL</th><th>MATERIAL</th><th>DEALER / CUSTOMER</th><th>KODE / BIN</th><th>NO. TO / KARTU</th><th class="pl-r">QTY</th><th>TANGGAL</th><th class="pl-c">LEAD TIME</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`
+                : '<div class="text-sm text-slate-500 py-2">Tidak ada data yang cocok di semua tahap.</div>';
         }
         setInterval(() => { const s = plEl('section-pipeline'); if (s && s.classList.contains('active-app')) { plRender(); if (window.kpReload) window.kpReload(); } }, 60000);
 
