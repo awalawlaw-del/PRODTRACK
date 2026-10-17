@@ -44,7 +44,50 @@
         .nav-tab.active { background: #2563eb; box-shadow: 0 0 10px rgba(37,99,235,0.5); }
         .app-section { display: none; }
         .app-section.active-app { display: block; }
-    </style>
+    
+/* ===== Pipeline ===== */
+.pl-flow{display:flex;flex-wrap:nowrap;align-items:stretch;padding:6px 0 10px;margin-bottom:6px}
+.pl-arrow{display:flex;align-items:center;justify-content:center;flex:none;width:18px;color:#a5b4fc;font-size:26px;font-weight:300}
+.pl-card{flex:1 1 0;min-width:0;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px 12px 12px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.pl-card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.pl-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.09)}
+.pl-card.sel{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+.pl-head{display:flex;align-items:center;gap:10px}
+.pl-ic{width:36px;height:36px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.pl-step{font-size:10px;font-weight:700;letter-spacing:.08em;color:#94a3b8}
+.pl-name{font-size:14px;font-weight:800;color:#1e293b;line-height:1.1}
+.pl-big{font-size:32px;font-weight:800;color:#0f172a;line-height:1;margin-top:14px;font-variant-numeric:tabular-nums}
+.pl-unit{font-size:12px;color:#64748b;margin:4px 0 10px}
+.pl-stats{flex:1;border-top:1px dashed #e2e8f0;padding-top:8px;font-size:12px}
+.pl-stats:empty{border:0;padding:0}
+.pl-stat{display:flex;justify-content:space-between;gap:6px;padding:2px 0;color:#64748b}
+.pl-stat b{color:#1e293b}
+.pl-bar{height:5px;background:#f1f5f9;border-radius:99px;margin:6px 0 2px;overflow:hidden}
+.pl-bar i{display:block;height:100%;border-radius:99px}
+.pl-act{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pl-btn{flex:1 1 auto;white-space:nowrap;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;font-weight:700;cursor:pointer}
+.pl-btn:hover{background:#f1f5f9}
+.pl-btn-p{background:#4f46e5;border-color:#4f46e5;color:#fff}.pl-btn-p:hover{background:#4338ca}
+.pl-auto{margin-top:12px;font-size:11px;font-weight:700;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px 8px}
+.pl-dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pl-dtitle{font-size:16px;font-weight:800;color:#1e293b}
+.pl-dsub{font-size:12px;color:#64748b;margin-top:2px}
+.pl-wrap{overflow:auto;max-height:560px;border:1px solid #e2e8f0;border-radius:12px}
+.pl-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.pl-tbl th{position:sticky;top:0;z-index:1;background:#f8fafc;color:#64748b;font-size:11px;font-weight:700;letter-spacing:.05em;text-align:left;padding:10px 14px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.pl-tbl td{padding:9px 14px;border-bottom:1px solid #f1f5f9;white-space:nowrap;color:#334155}
+.pl-tbl tbody tr:nth-child(even){background:#fafbfd}
+.pl-tbl tbody tr:hover{background:#eef2ff}
+.pl-tbl .pl-r{text-align:right;font-variant-numeric:tabular-nums}
+.pl-tbl .pl-c{text-align:center}
+.pl-tbl .pl-w{white-space:normal;min-width:180px}
+.pl-mono{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.pl-pill{display:inline-block;min-width:66px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.pl-ok{background:#d1fae5;color:#047857}.pl-bad{background:#fee2e2;color:#b91c1c}
+.pl-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:36px 12px;color:#64748b;font-size:13px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc}
+.pl-empty b{color:#334155;font-size:14px}
+@media(max-width:1000px){.pl-flow{flex-wrap:wrap;gap:10px}.pl-arrow{display:none}.pl-card{flex:1 1 210px}}
+</style>
 
     <!-- CSS Asli Web 2 (Honda Theme) -->
     <style>
@@ -311,10 +354,13 @@
         <button class="sb-item" data-nav="mp" onclick="switchTab('mp')"><span class="sb-ic">👤</span>TRACK-X-MP</button>
         <button class="sb-item" data-nav="honda" onclick="switchTab('honda')"><span class="sb-ic">📊</span>Generator Laporan Honda</button>
         <button class="sb-item" data-nav="tv" onclick="switchTab('tv')"><span class="sb-ic">📺</span>Dashboard TV</button>
+        <button class="sb-item" data-nav="pipeline" onclick="switchTab('pipeline')"><span class="sb-ic">🔀</span>Pipeline</button>
 
         <div class="sb-sep"></div>
         <div class="sb-group">Kartu</div>
         <button class="sb-item" data-nav="kp-db"   onclick="kpGo('db')"><span class="sb-ic">🗂️</span>CARD X</button>
+        <button class="sb-item" data-nav="kp-master" onclick="kpGo('master')"><span class="sb-ic">📚</span>MASTER CARD X</button>
+        <button class="sb-item" data-nav="kp-os"   onclick="kpGo('os')"><span class="sb-ic">🧾</span>OS CARD-X<span id="kpOsBadge" class="kp-badge">0</span></button>
 
         <div class="sb-group sb-fold" data-fold="pick" onclick="sbFold('pick')"><span>Kartu For Picking</span><span class="sb-arr">▸</span></div>
         <button class="sb-item sb-hide" data-grp="pick" data-nav="kp-oop"  onclick="kpGo('oop')"><span class="sb-ic">🛒</span>Outstanding Picking<span id="kpOopBadge" class="kp-badge">0</span></button>
@@ -795,23 +841,17 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
                     <div id="kpAsgList" class="overflow-x-auto max-h-80 overflow-y-auto"></div>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div class="md:col-span-2 kp-admin-only">
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Upload Excel Picking (SD Doc. No, Date Trans O, Customer Name, Total Item, Card No)</label>
-                            <input type="file" id="kpFile" accept=".xlsx,.xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                        </div>
-                        <div class="kp-admin-only"><button onclick="kpImport()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-[0.98]">⬆️ Import ke Database</button></div>
-                        <div><button onclick="kpExport()" class="w-full bg-emerald-50 text-emerald-700 font-bold py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition">📥 Export Excel</button></div>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-xs text-slate-500">Daftar kartu (sudah ada No. Kartu) yang menunggu disorot di Penyiapan. Upload data dilakukan di menu <b>MASTER CARD X</b>.</p>
+                        <button onclick="kpExport()" class="bg-emerald-50 text-emerald-700 font-bold text-sm px-4 py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition whitespace-nowrap">📥 Export Excel</button>
                     </div>
-                    <p class="text-xs text-slate-400 mt-3 kp-admin-only">Hanya 5 kolom yang diambil. Baris tanpa Card No dilewati. Delivery yang sudah ada tidak ditimpa bila statusnya sudah berjalan.</p>
-                    <div id="kpImportInfo" class="hidden kp-admin-only mt-3 text-sm bg-slate-50 border border-slate-200 rounded-lg p-3"></div>
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                     <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
                         <input id="kpFSearch" oninput="kpRenderDb()" placeholder="Cari delivery / dealer / kartu..." class="md:col-span-2 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                         <select id="kpFStatus" onchange="kpRenderDb()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
-                            <option value="">Semua Status</option><option value="BELUM">Outstanding Picking</option><option value="SIAP">Outstanding Packing</option><option value="PACK">✔ Selesai Pack</option><option value="PRI">⭐ Kartu Prioritas (P &amp; H)</option>
+                            <option value="">Semua (belum disorot)</option><option value="PRI">⭐ Kartu Prioritas (P &amp; H)</option>
                         </select>
                         <input type="date" id="kpFFrom" onchange="kpRenderDb()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
                         <input type="date" id="kpFTo" onchange="kpRenderDb()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
@@ -872,6 +912,123 @@ create policy "kp_all" on kartu_picking for all using (true) with check (true);<
                         <h3 class="text-sm font-extrabold text-slate-700 mt-5 mb-2">Menunggu Pengecekan</h3>
                         <div id="kpPendingCek" class="flex flex-wrap gap-2"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ============ PANE: MASTER CARD X (database utama pick & pack) ============ -->
+            <div id="kp-pane-master" class="kp-pane hidden">
+                <div id="kpMasLocalWarn" class="hidden mb-5 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3">
+                    ⚠️ Tabel <b>master_cardx</b> belum ada / belum lengkap di Supabase, jadi data MASTER CARD X sementara disimpan di browser ini saja (tidak dibagi ke komputer lain).
+                    Jalankan SQL di bawah ini sekali di Supabase &rarr; SQL Editor, lalu klik Refresh.
+                    <pre class="mt-2 bg-white border border-amber-200 rounded p-2 overflow-x-auto text-[11px] text-slate-700 select-all">create table if not exists master_cardx (
+  id bigint generated always as identity primary key,
+  delivery_no text not null,
+  trans_order text,
+  tgl date,
+  dealer text,
+  total_item int default 0,
+  sales_order text,
+  card_no text,
+  date_confirm date,
+  created_at timestamptz default now()
+);
+alter table master_cardx add column if not exists proc_status text;
+alter table master_cardx add column if not exists picker text;
+alter table master_cardx add column if not exists picked_at timestamptz;
+alter table master_cardx add column if not exists lokasi text;
+alter table master_cardx add column if not exists packer text;
+alter table master_cardx add column if not exists packed_at timestamptz;
+alter table master_cardx drop constraint if exists master_cardx_delivery_no_key;
+create index if not exists master_cardx_trans_order_idx on master_cardx (trans_order);
+alter table master_cardx enable row level security;
+drop policy if exists "mc_all" on master_cardx;
+create policy "mc_all" on master_cardx for all using (true) with check (true);</pre>
+                </div>
+                <div class="kp-admin-only bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Upload Excel Pick &amp; Pack (Trans. Order, SD Doc. No, Date Trans O, Customer Name, Total Item, Card No, Sales Order, Date Confirm)</label>
+                            <input type="file" id="kpFile" accept=".xlsx,.xls" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        </div>
+                        <div><button onclick="kpImport()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-[0.98]">⬆️ Upload ke MASTER CARD X</button></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3">Semua baris disimpan di MASTER CARD X dan tidak hilang. Baris ber-Card No otomatis masuk daftar <b>CARD X</b> sampai disorot di Penyiapan; baris tanpa Card No tampil di <b>OS CARD-X</b>. Upload ulang dicocokkan berdasarkan <b>Nomor TO + No. Delivery</b> dan hanya <b>mengisi kolom yang masih kosong</b>; data yang sudah terisi tidak ditimpa (kosong tidak menghapus isi). Delivery yang sudah berjalan (sudah disorot) tidak ditimpa.</p>
+                    <div id="kpImportInfo" class="hidden mt-3 text-sm bg-slate-50 border border-slate-200 rounded-lg p-3"></div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-slate-400"><p class="text-[11px] font-bold text-slate-400 uppercase">Total Delivery</p><p id="kpMasStDel" class="text-3xl font-black text-slate-800">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-red-400"><p class="text-[11px] font-bold text-red-500 uppercase">Belum Ada Kartu</p><p id="kpMasStNo" class="text-3xl font-black text-red-600">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-amber-400"><p class="text-[11px] font-bold text-amber-600 uppercase">Ada Kartu, Belum Done Pack</p><p id="kpMasStProc" class="text-3xl font-black text-amber-600">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-emerald-400"><p class="text-[11px] font-bold text-emerald-600 uppercase">✔ Done Pick &amp; Pack</p><p id="kpMasStDone" class="text-3xl font-black text-emerald-600">0</p></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-800">MASTER CARD X &mdash; Database Pick &amp; Pack</h2>
+                            <p class="text-xs text-slate-500">Semua hasil upload Excel Pick &amp; Pack (menu CARD X) disimpan di sini dan <b>tidak hilang</b>. Status berubah otomatis saat kartu disorot di Penyiapan (Done Pick) dan Pengecekan (Done Pick &amp; Pack), lengkap dengan nama petugasnya. Upload ulang dicocokkan berdasarkan <b>Nomor TO + No. Delivery</b> dan hanya mengisi kolom yang masih kosong (Date Confirm, No. Kartu, dll); data yang sudah terisi tidak ditimpa.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="kpMasBackfill()" class="kp-admin-only bg-slate-50 text-slate-600 text-xs font-bold px-3 py-2.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition whitespace-nowrap" title="Salin data yang sudah ada di database kartu ke MASTER CARD X">🔄 Sinkron dari CARD X</button>
+                            <button onclick="kpMasExport()" class="bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition whitespace-nowrap">📥 Export Excel</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
+                        <input id="kpMasSearch" oninput="kpRenderMaster()" placeholder="Cari TO / delivery / dealer / PO / kartu / petugas..." class="md:col-span-2 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="kpMasStatus" onchange="kpRenderMaster()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
+                            <option value="">Semua Status</option><option value="NOCARD">Belum Ada Kartu</option><option value="BELUM">Belum Pick</option><option value="SIAP">Done Pick (Menunggu Pack)</option><option value="PACK">✔ Done Pick &amp; Pack</option>
+                        </select>
+                        <input type="date" id="kpMasFrom" onchange="kpRenderMaster()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
+                        <input type="date" id="kpMasTo" onchange="kpRenderMaster()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
+                        <button onclick="kpMasDeleteRange()" class="kp-admin-only bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition py-2.5">🗑️ Hapus Tgl Terpilih</button>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                        <table class="min-w-full divide-y divide-slate-100 kp-resp">
+                            <thead class="bg-slate-50"><tr>
+                                <th class="kp-th">Nomor TO</th><th class="kp-th">Nomor Delivery</th><th class="kp-th">Tgl Leveling</th><th class="kp-th">Nama Dealer</th>
+                                <th class="kp-th text-center">Total Item</th><th class="kp-th">Nomor PO</th><th class="kp-th text-center">No. Kartu</th><th class="kp-th">Date Confirm</th>
+                                <th class="kp-th text-center">Status</th><th class="kp-th">Picker</th><th class="kp-th">Packer</th><th class="kp-th text-center kp-admin-only">Aksi</th>
+                            </tr></thead>
+                            <tbody id="kpMasBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-between items-center mt-3">
+                        <p id="kpMasCount" class="text-xs text-slate-500 font-semibold"></p>
+                        <button onclick="kpMasDeleteAll()" class="kp-admin-only text-xs font-bold text-red-600 hover:underline">Hapus semua data MASTER CARD X</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PANE: OS CARD-X (belum ada No. Kartu, dari MASTER CARD X) ============ -->
+            <div id="kp-pane-os" class="kp-pane hidden">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-slate-400"><p class="text-[11px] font-bold text-slate-400 uppercase">Total Delivery</p><p id="kpOsStDel" class="text-3xl font-black text-slate-800">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-sky-400"><p class="text-[11px] font-bold text-sky-600 uppercase">Total Item</p><p id="kpOsStItem" class="text-3xl font-black text-sky-600">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-violet-400"><p class="text-[11px] font-bold text-violet-600 uppercase">Jumlah Dealer</p><p id="kpOsStDlr" class="text-3xl font-black text-violet-600">0</p></div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 border-l-4 border-l-red-400"><p class="text-[11px] font-bold text-red-500 uppercase">Tertua (hari)</p><p id="kpOsStOld" class="text-3xl font-black text-red-600">0</p></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-800">OS CARD-X &mdash; Belum Ada No. Kartu</h2>
+                            <p class="text-xs text-slate-500">Diambil otomatis dari <b>MASTER CARD X</b>: semua delivery yang kolom Card No-nya masih kosong. Hilang dari daftar ini sendiri begitu upload berikutnya sudah membawa Card No.</p>
+                        </div>
+                        <button onclick="kpOsExport()" class="bg-emerald-50 text-emerald-700 text-sm font-bold px-4 py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition whitespace-nowrap">📥 Export Excel</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                        <input id="kpOsSearch" oninput="kpRenderOs()" placeholder="Cari TO / delivery / dealer / PO..." class="md:col-span-2 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="date" id="kpOsFrom" onchange="kpRenderOs()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
+                        <input type="date" id="kpOsTo" onchange="kpRenderOs()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none">
+                    </div>
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                        <table class="min-w-full divide-y divide-slate-100 kp-resp">
+                            <thead class="bg-slate-50"><tr>
+                                <th class="kp-th">Nomor TO</th><th class="kp-th">Nomor Delivery</th><th class="kp-th">Tgl Leveling</th><th class="kp-th">Nama Dealer</th>
+                                <th class="kp-th text-center">Total Item</th><th class="kp-th">Nomor PO</th><th class="kp-th text-center">Umur</th>
+                            </tr></thead>
+                            <tbody id="kpOsBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                        </table>
+                    </div>
+                    <p id="kpOsCount" class="text-xs text-slate-500 font-semibold mt-3"></p>
                 </div>
             </div>
 
@@ -1145,6 +1302,45 @@ create policy "rm_all" on receiver_masuk for all using (true) with check (true);
         </div>
     </div>
 
+    <!-- PIPELINE (OS Leveling > Picking > Packing > Good Issue > Shipment) -->
+    <div id="section-pipeline" class="app-section p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex-1" style="min-width:240px">
+                        <h1 class="text-2xl font-extrabold text-slate-800">🔀 Pipeline</h1>
+                        <p class="text-sm text-slate-500">Outstanding tiap tahap beserta lead time-nya (dalam hari). Data diisi lewat upload Excel per tahap, kecuali <b>OS Picking</b> dan <b>OS Packing</b> yang otomatis dari MASTER CARD X.</p>
+                    </div>
+                    <span id="plBadge" class="text-[11px] font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700"></span>
+                    <button onclick="plLoad()" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold border border-slate-300">↻ Muat ulang</button>
+                </div>
+                <p class="text-xs text-slate-500 mt-3">Format file: baris pertama berisi judul kolom. Dibutuhkan kolom tanggal (<b>TGL LEVELING</b> / Tanggal / Date). Dikenali juga: <b>NOMOR DELIVERY, KODE DEALER, NAMA DEALER, MATERIAL, QTY</b>. Kolom LEAD TIME di file tidak dipakai, web menghitung sendiri dari tanggal. Setiap upload <b>mengganti</b> seluruh data tahap tersebut.</p>
+                <details class="mt-2 text-xs text-slate-500"><summary class="cursor-pointer font-bold">SQL tabel (sekali saja)</summary>
+                    <pre class="mt-2 whitespace-pre-wrap select-all bg-slate-50 border border-slate-200 rounded p-2">-- Tabel baru:
+create table pipeline_data (
+  id bigint generated always as identity primary key,
+  stage text not null, ref_no text, cust text, kode text, material text, qty numeric,
+  start_at timestamptz not null, created_at timestamptz default now());
+alter table pipeline_data enable row level security;
+create policy "pipeline_all" on pipeline_data for all using (true) with check (true);
+
+-- Kalau tabel sudah dibuat sebelumnya, cukup tambah 2 kolom:
+alter table pipeline_data add column if not exists kode text, add column if not exists material text;</pre></details>
+                <div id="plWarn" class="hidden mt-3 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3">
+                    Tabel <b>pipeline_data</b> belum ada di Supabase, jadi data sementara disimpan di browser ini saja. Jalankan SQL ini di Supabase (SQL Editor), lalu klik Muat ulang:
+                    <pre class="mt-2 whitespace-pre-wrap select-all">create table pipeline_data (
+  id bigint generated always as identity primary key,
+  stage text not null, ref_no text, cust text, kode text, material text, qty numeric,
+  start_at timestamptz not null, created_at timestamptz default now());
+alter table pipeline_data enable row level security;
+create policy "pipeline_all" on pipeline_data for all using (true) with check (true);</pre>
+                </div>
+            </div>
+            <div id="plCards" class="flex flex-wrap items-stretch gap-2 mb-4"></div>
+            <div id="plDetail" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5"></div>
+        </div>
+    </div>
+
     <!-- DASHBOARD TV (tampilan yang sama dengan layar TV gudang) -->
     <div id="section-tv" class="app-section p-4 md:p-8">
         <div class="max-w-7xl mx-auto">
@@ -1256,6 +1452,24 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         // --- INOVASI SUPABASE (TERINTEGRASI) ---
         // --- PENYIMPANAN: true = localStorage browser (sementara), false = Supabase ---
         const USE_LOCAL = false;
+
+        // ===== ZONA WAKTU: seluruh web memakai WITA (UTC+8), bukan jam komputer =====
+        const TZ_APP = 'Asia/Makassar', WITA_MS = 8 * 3600e3;
+        function witaParts(d) {
+            const o = {};
+            new Intl.DateTimeFormat('en-GB', { timeZone: TZ_APP, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                .formatToParts(d || new Date()).forEach(p => { o[p.type] = p.value; });
+            return o;
+        }
+        function witaYmd(d) { const z = witaParts(d); return z.year + '-' + z.month + '-' + z.day; }
+        function witaHour(d) { return +witaParts(d).hour; }
+        // tanggal/jam "dinding" (tanpa zona, misalnya dari Excel) -> waktu absolut menurut WITA
+        function witaFromWall(y, mo, d, h, mi) { return new Date(Date.UTC(y, mo - 1, d, h || 0, mi || 0) - WITA_MS); }
+        // selisih hari kalender (WITA) dari satu waktu sampai sekarang
+        function witaDayDiff(fromIso, to) {
+            const a = witaYmd(new Date(fromIso)).split('-').map(Number), b = witaYmd(to || new Date()).split('-').map(Number);
+            return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+        }
         const SUPABASE_URL = 'https://gwrkfdjukuiydczfhvbo.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Dbu_NnbMHlTjiyC_xM5RQw_3Wvv5i2v';
 
@@ -1346,7 +1560,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         Chart.defaults.borderColor = '#e8ebf7';
 
         function switchTab(target) {
-            const map = { gudang: 'section-gudang', honda: 'section-honda', mp: 'section-mp', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep', tv: 'section-tv' };
+            const map = { gudang: 'section-gudang', honda: 'section-honda', mp: 'section-mp', kartu: 'section-kartu', users: 'section-users', ket: 'section-ket', rcv: 'section-rcv', 'rcv-rep': 'section-rcv-rep', tv: 'section-tv', pipeline: 'section-pipeline' };
             const accessKey = target === 'kartu' ? 'kp-' + (window.kpCurrent || 'db') : target;
             if (window.canAccess && !window.canAccess(accessKey)) return;
             document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active-app'));
@@ -1354,6 +1568,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
             if (target === 'honda') updateHondaIntegratedChart();
             if (target === 'tv') tvOpen();
+            if (target === 'pipeline') plLoad();
             if (target === 'gudang') refreshProduktivitas();
             if (target === 'mp') mpOpen();
             if (target === 'users' && window.authOnOpenUsers) authOnOpenUsers();
@@ -1374,6 +1589,208 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             document.querySelectorAll('.sb-item[data-grp="' + g + '"]').forEach(b => b.classList.toggle('sb-hide', !open));
         }
         function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('open'); }
+
+                // ===== PIPELINE: OS Leveling > Picking > Packing > Good Issue > Shipment =====
+        const PL_STAGES = [
+            { k: 'GR', n: 'OS GR', ic: '📥', note: 'Belum ada data' },
+            { k: 'LEVELING', n: 'OS Leveling', ic: '⚖️', note: 'Belum ada data' },
+            { k: 'PICKING', n: 'OS Picking', ic: '🛒' },
+            { k: 'PACKING', n: 'OS Packing', ic: '📦' },
+            { k: 'GI', n: 'OS Good Issue', ic: '📤' },
+            { k: 'SHIPMENT', n: 'OS Shipment', ic: '🚚' }
+        ];
+        // OS Picking & OS Packing otomatis dari MASTER CARD X (tanpa upload):
+        //   PICKING = Date Confirm masih kosong | PACKING = Date Confirm terisi tapi Packer masih kosong
+        const PL_AUTO = { PICKING: 1, PACKING: 1 };
+        function plAutoRows(k) {
+            const m = (window.kpGetMaster && window.kpGetMaster()) || [], bl = v => v == null || String(v).trim() === '';
+            const src = k === 'PICKING' ? m.filter(r => bl(r.date_confirm)) : m.filter(r => !bl(r.date_confirm) && bl(r.packer));
+            return src.map(r => {
+                const d = plDate(k === 'PICKING' ? (r.tgl || r.created_at) : r.date_confirm) || new Date();
+                return { id: 'm' + r.id, stage: k, ref_no: r.delivery_no, gkey: (r.trans_order || '') + '|' + r.delivery_no, to: r.trans_order || '', kartu: r.card_no || '', cust: r.dealer, qty: Number(r.total_item) || 0, start_at: d.toISOString() };
+            });
+        }
+        const plStageRows = k => PL_AUTO[k] ? plAutoRows(k) : (k === 'GR' ? plRows.filter(r => r.stage === k).map(r => Object.assign({}, r, { gkey: 'r' + r.id })) : plRows.filter(r => r.stage === k));
+        window.onMasterChanged = () => { try { plRender(); } catch (_) {} };
+        const PL_LS = 'pipeline_ls', PL_TGT = 'pipeline_target';
+        let plRows = [], plSel = 'LEVELING', plMode = 'cloud';
+        const plEl = id => document.getElementById(id);
+        const plEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const PL_T = 24;   // batas lewat target = 1 hari (tanpa input)
+        function plTarget() { try { return JSON.parse(localStorage.getItem(PL_TGT) || '{}'); } catch (_) { return {}; } }
+        function plSetTarget(k, v) { const t = plTarget(); t[k] = Math.max(1, parseFloat(v) || 24); localStorage.setItem(PL_TGT, JSON.stringify(t)); plRender(); }
+        function plFmt(h) {
+            const d = h / 24; return (Number.isInteger(d) ? d : d.toFixed(1)) + ' hari';
+        }
+        const plNum = v => typeof v === 'number' ? v : (parseFloat(String(v == null ? '' : v).replace(/\./g, '').replace(',', '.')) || 0);
+        // Tanggal selalu dibaca sebagai tanggal LOKAL (bukan UTC) supaya tidak mundur sehari
+        // Tanggal selalu diperlakukan sebagai tanggal/jam WITA (bukan zona komputer)
+        function plDate(v) {
+            if (v instanceof Date) return isNaN(v) ? null : witaFromWall(v.getFullYear(), v.getMonth() + 1, v.getDate(), v.getHours(), v.getMinutes());
+            if (typeof v === 'number') {
+                const d = new Date(Math.round((v - 25569) * 86400000));
+                return witaFromWall(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes());
+            }
+            const s = String(v == null ? '' : v).trim(); if (!s) return null;
+            let m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
+            if (m) return witaFromWall(+m[3], +m[2], +m[1], +(m[4] || 0), +(m[5] || 0));
+            m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2}))?/);
+            if (m) return witaFromWall(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0));
+            const d = new Date(s); return isNaN(d) ? null : d;
+        }
+        // Umur (jam). OS Leveling dihitung per hari kalender WITA (sama dengan kolom LEAD TIME di file olahan)
+        function plAgeH(startIso, stage) {
+            return witaDayDiff(startIso) * 24;   // lead time selalu dalam hari
+        }
+        function plTglStr(iso, stage) {
+            const d = new Date(iso);
+            if (stage === 'LEVELING') { const z = witaParts(d); return z.day + '.' + z.month + '.' + z.year; }
+            return d.toLocaleString('id-ID', { timeZone: TZ_APP, dateStyle: 'short', timeStyle: 'short' });
+        }
+        function plGroup(rows) {
+            const m = new Map();
+            rows.forEach(r => { const k = r.gkey || r.ref_no || ('id' + r.id); if (!m.has(k)) m.set(k, { start_at: r.start_at }); });
+            return [...m.values()];
+        }
+        async function plLoad() {
+            let all = [], from = 0, err = null;
+            while (true) {
+                const { data, error } = await supabaseClient.from('pipeline_data').select('*').range(from, from + 999);
+                if (error) { err = error; break; }
+                all = all.concat(data || []);
+                if (!data || data.length < 1000) break;
+                from += 1000;
+            }
+            if (err) { plMode = 'local'; try { all = JSON.parse(localStorage.getItem(PL_LS) || '[]'); } catch (_) { all = []; } } else plMode = 'cloud';
+            plRows = all; plRender();
+            if (window.kpReload) window.kpReload();   // ambil MASTER CARD X terbaru dari database
+        }
+        async function plReplace(stage, rows) {
+            if (plMode === 'local' && !USE_LOCAL) {
+                plRows = plRows.filter(r => r.stage !== stage).concat(rows.map((r, i) => Object.assign({ id: Date.now() + i }, r)));
+                try { localStorage.setItem(PL_LS, JSON.stringify(plRows)); return null; } catch (e) { return e; }
+            }
+            let res = await supabaseClient.from('pipeline_data').delete().eq('stage', stage);
+            if (res.error) return res.error;
+            for (let i = 0; i < rows.length; i += 500) {
+                res = await supabaseClient.from('pipeline_data').insert(rows.slice(i, i + 500));
+                if (res.error) return res.error;
+            }
+            return null;
+        }
+        function plUpload(stage) {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.csv';
+            inp.onchange = async () => {
+                const f = inp.files[0]; if (!f) return;
+                try {
+                    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });          // tanpa cellDates: tanggal dibaca sebagai angka serial
+                    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
+                    if (!data.length) return alert('File kosong.');
+                    const keys = Object.keys(data[0]), pick = re => keys.find(k => re.test(k));
+                    const cTgl = (stage === 'GR' ? pick(/last.?move/i) : null) || pick(/tgl|tanggal|date|waktu|created|release|rilis|posting/i);
+                    if (!cTgl) return alert('Kolom tanggal tidak ditemukan. Beri judul kolom yang mengandung ' + (stage === 'GR' ? '"Last Move", ' : '') + '"Tgl", "Tanggal", "Date", atau "Waktu".\nKolom terbaca: ' + keys.join(', '));
+                    const cNo = (stage === 'GR' ? pick(/material|matnr/i) : null) || pick(/deliver|^dn$|^do$|doc|ref|nomor|^no/i) || keys[0];
+                    const cKode = (stage === 'GI' ? keys.find(k => /ship.?to/i.test(k) && !/name|nama/i.test(k)) : null) || pick(/kode|code|sold.?to/i);   // OS GI: Ship-to party -> KODE DEALER
+                    const cNama = pick(/nama|name|cust/i) || keys.find(k => /dealer/i.test(k) && k !== cKode);
+                    const cMat = pick(/material|matnr/i);
+                    const cQty = pick(/qty|quantity|jumlah/i) || pick(/item/i);
+                    const rows = []; let bad = 0;
+                    data.forEach(r => {
+                        const d = plDate(r[cTgl]); if (!d) { bad++; return; }
+                        const row = { stage, ref_no: String(r[cNo]).trim(), cust: cNama ? String(r[cNama]).trim() : '', qty: cQty ? plNum(r[cQty]) : 0, start_at: d.toISOString() };
+                        if (cKode) row.kode = String(r[cKode]).trim();
+                        if (cMat) row.material = String(r[cMat]).trim();
+                        rows.push(row);
+                    });
+                    if (!rows.length) return alert('Tidak ada baris dengan tanggal yang terbaca.');
+                    const nDel = new Set(rows.map(r => r.ref_no)).size;
+                    if (!confirm('Ganti data ' + stage + ' dengan ' + rows.length + ' baris (' + nDel + ' delivery) dari "' + f.name + '"?' + (bad ? '\n(' + bad + ' baris dilewati karena tanggal tidak terbaca)' : '') +
+                        '\nKolom dipakai: Tanggal=' + cTgl + ', No=' + cNo + (cKode ? ', Kode=' + cKode : '') + (cNama ? ', Nama=' + cNama : '') + (cMat ? ', Material=' + cMat : '') + (cQty ? ', Qty=' + cQty : ''))) return;
+                    // cek dulu kolom kode/material ada di tabel (supaya data lama tidak terhapus kalau gagal)
+                    if ((cKode || cMat) && !(plMode === 'local' && !USE_LOCAL)) {
+                        const pr = await supabaseClient.from('pipeline_data').select('kode,material').range(0, 0);
+                        if (pr.error) return alert('Tabel pipeline_data belum punya kolom kode dan material.\nJalankan SQL di bagian "SQL tabel (sekali saja)" di halaman ini, lalu upload ulang.\n\n' + pr.error.message);
+                    }
+                    const e = await plReplace(stage, rows);
+                    if (e) return alert('❌ Gagal menyimpan: ' + e.message);
+                    plSel = stage; await plLoad();
+                } catch (err) { alert('❌ ' + err.message); }
+            };
+            inp.click();
+        }
+        async function plClear(stage) {
+            if (!confirm('Kosongkan data ' + stage + '?')) return;
+            const e = await plReplace(stage, []); if (e) return alert('❌ ' + e.message);
+            await plLoad();
+        }
+        window.plPick = k => { plSel = k; plRender(); };
+        function plRender() {
+            if (!plEl('plCards')) return;
+            plEl('plBadge').textContent = (plMode === 'local' || USE_LOCAL) ? '💾 Penyimpanan browser' : '☁️ Cloud (Supabase)';
+            plEl('plWarn').classList.toggle('hidden', !(plMode === 'local' && !USE_LOCAL));
+            const fmtN = v => Number(v || 0).toLocaleString('id-ID');
+            const stat = (l, v) => `<div class="pl-stat"><span>${l}</span><b>${v}</b></div>`;
+            let html = '';
+            PL_STAGES.forEach((s, i) => {
+                const rows = plStageRows(s.k), t = PL_T;
+                const grp = plGroup(rows), n = grp.length;
+                const ages = grp.map(g => plAgeH(g.start_at, s.k)), late = ages.filter(a => a > t).length;
+                const avg = n ? ages.reduce((a, b) => a + b, 0) / n : 0, mx = n ? Math.max.apply(null, ages) : 0;
+                // Total material = jumlah material (hitungan item), BUKAN penjumlahan qty
+                const totMat = PL_AUTO[s.k] ? rows.reduce((a, r) => a + (Number(r.qty) || 0), 0) : rows.filter(r => r.material).length;
+                const pct = n ? Math.round(late / n * 100) : 0;
+                const col = !n ? '#cbd5e1' : (late / n > 0.3 ? '#ef4444' : (late ? '#f59e0b' : '#10b981'));
+                const unit = !n ? (PL_AUTO[s.k] ? 'tidak ada outstanding' : (s.note || 'belum ada data'))
+                    : (s.k === 'LEVELING' || PL_AUTO[s.k] ? 'delivery outstanding' : (s.k === 'GR' ? 'material outstanding' : 'dokumen outstanding'));
+                let stats = '';
+                if (n) {
+                    if (s.k === 'GR') stats += stat('Total qty', fmtN(rows.reduce((a, r) => a + (Number(r.qty) || 0), 0)));
+                    else if (totMat) stats += stat('Total material', fmtN(totMat));
+                    if (s.k !== 'GI') stats += stat('Rata-rata', plFmt(avg)) + stat('Terlama', plFmt(mx)) +
+                        stat('Lewat target', `<span style="color:${col}">${late} (${pct}%)</span>`) +
+                        `<div class="pl-bar"><i style="width:${pct}%;background:${col}"></i></div>`;
+                }
+                const foot = PL_AUTO[s.k]
+                    ? '<div class="pl-auto">🔗 Otomatis dari MASTER CARD X</div>'
+                    : `<div class="pl-act" onclick="event.stopPropagation()"><button class="pl-btn pl-btn-p" onclick="plUpload('${s.k}')">↑ Upload</button>` +
+                      (n ? `<button class="pl-btn" onclick="plClear('${s.k}')">Kosongkan</button>` : '') + '</div>';
+                html += (i ? '<div class="pl-arrow">›</div>' : '') +
+                    `<div class="pl-card${plSel === s.k ? ' sel' : ''}" style="--c:${col}" onclick="plPick('${s.k}')">` +
+                    `<div class="pl-head"><span class="pl-ic">${s.ic}</span><div><div class="pl-step">TAHAP ${i + 1}</div><div class="pl-name">${s.n}</div></div></div>` +
+                    `<div class="pl-big">${fmtN(n)}</div><div class="pl-unit">${unit}</div>` +
+                    `<div class="pl-stats">${stats}</div>${foot}</div>`;
+            });
+            plEl('plCards').className = 'pl-flow';
+            plEl('plCards').innerHTML = html;
+
+            const st = PL_STAGES.find(x => x.k === plSel), rows = plStageRows(plSel), t = PL_T, auto = !!PL_AUTO[plSel];
+            const list = rows.map(r => Object.assign({ age: plAgeH(r.start_at, plSel) }, r)).sort((a, b) => b.age - a.age || String(a.ref_no).localeCompare(String(b.ref_no)));
+            const mono = v => `<span class="pl-mono">${plEsc(v)}</span>`, qn = r => Number(r.qty) ? fmtN(r.qty) : '';
+            const LEAD = { h: 'LEAD TIME', c: 'pl-c', v: r => `<span class="pl-pill ${r.age > t ? 'pl-bad' : 'pl-ok'}">${plFmt(r.age)}</span>` };
+            const cols = plSel === 'LEVELING' ? [
+                    { h: 'TGL LEVELING', v: r => plTglStr(r.start_at, plSel) }, { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'KODE DEALER', v: r => plEsc(r.kode) },
+                    { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) }, { h: 'MATERIAL', v: r => mono(r.material) }, { h: 'QTY', c: 'pl-r', v: qn }, LEAD]
+                : auto ? [
+                    { h: plSel === 'PICKING' ? 'TGL LEVELING' : 'DATE CONFIRM', v: r => plTglStr(r.start_at, 'LEVELING') }, { h: 'NOMOR TO', v: r => mono(r.to || '-') },
+                    { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'NO. KARTU', v: r => plEsc(r.kartu || '-') }, { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) },
+                    { h: 'TOTAL MATERIAL', c: 'pl-r', v: qn }, LEAD]
+                : plSel === 'GR' ? [
+                    { h: 'MATERIAL', v: r => mono(r.material || r.ref_no) }, { h: 'QTY', c: 'pl-r', v: qn }, { h: 'LAST MOVE', v: r => plTglStr(r.start_at, 'LEVELING') }, LEAD]
+                : plSel === 'GI' ? [
+                    { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'KODE DEALER', v: r => plEsc(r.kode) }, { h: 'CUSTOMER', c: 'pl-w', v: r => plEsc(r.cust) },
+                    { h: 'MATERIAL', v: r => mono(r.material) }, { h: 'QTY', c: 'pl-r', v: qn }]
+                : [{ h: 'MULAI OUTSTANDING', v: r => plTglStr(r.start_at, plSel) }, { h: 'NOMOR DOKUMEN', v: r => mono(r.ref_no) }, { h: 'CUSTOMER', c: 'pl-w', v: r => plEsc(r.cust) },
+                    { h: 'QTY', c: 'pl-r', v: qn }, LEAD];
+            const LIM = 1000;
+            const head = cols.map(c => `<th class="${c.c || ''}">${c.h}</th>`).join('');
+            const body = list.slice(0, LIM).map(r => '<tr>' + cols.map(c => `<td class="${c.c || ''}">${c.v(r)}</td>`).join('') + '</tr>').join('');
+            const empty = `<div class="pl-empty"><div style="font-size:34px">${st.ic}</div><b>Belum ada data</b><span>` +
+                (auto ? 'Tidak ada data outstanding. Diambil otomatis dari MASTER CARD X.' : `Klik <b>⬆ Upload</b> pada kartu ${st.n} untuk mengisi data.`) + '</span></div>';
+            plEl('plDetail').innerHTML = `<div class="pl-dhead"><div><div class="pl-dtitle">${st.ic} Detail ${st.n}</div>` +
+                `<div class="pl-dsub">${list.length > LIM ? LIM + ' terlama dari ' + fmtN(list.length) + ' baris' : fmtN(list.length) + ' baris'}</div></div></div>` +
+                (list.length ? `<div class="pl-wrap"><table class="pl-tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` : empty);
+        }
+        setInterval(() => { const s = plEl('section-pipeline'); if (s && s.classList.contains('active-app')) { plRender(); if (window.kpReload) window.kpReload(); } }, 60000);
 
         // --- Dashboard TV: file DASHBOARD_TV.html harus satu folder dengan halaman ini ---
         const TV_FILE = 'DASHBOARD_TV.html';
@@ -1403,7 +1820,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 if (!nama || nama === '-' || nama === 'ADMIN') return;
                 const key = rev[nama] || nama;
                 if (!USER_NAME_MAP[key]) USER_NAME_MAP[key] = nama;
-                const tgl = new Date(at).toLocaleDateString('en-CA');
+                const tgl = witaYmd(new Date(at));
                 const div = bagian;   // divisi mengikuti AKTIVITAS (Penyiapan=PACKER, Pengecekan=PICKER); beda dari divisi roster -> tampil di kolom aktivitas lain
                 const k = key + '|' + tgl + '|' + div;
                 if (!agg[k]) agg[k] = { tanggal: tgl, nama: key, bagian: div, jumlah: 0, keterangan: ket };
@@ -1565,8 +1982,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     scales: { x: { grid: { display: false } }, y: { beginAtZero: true, title: { display: true, text: 'Item' } },
                         ...(div === 'RECEIVER' ? { y2: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { precision: 0 }, title: { display: true, text: 'Pallet' } } } : {}) } }
             });
-            // tabel: tanggal terbaru di atas, 5 tanggal per halaman
-            const PER = 5, pkey = code + '|' + sDate + '|' + eDate;
+            // tabel: tanggal terbaru di atas, 25 tanggal per halaman
+            const PER = window._perfPER || 25, pkey = code + '|' + sDate + '|' + eDate;
             if (window._perfKey !== pkey) { window._perfKey = pkey; window._perfPage = 0; }
             const pages = Math.ceil(dates.length / PER);
             window._perfPage = Math.min(Math.max(0, window._perfPage || 0), pages - 1);
@@ -1677,7 +2094,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     [['disiapkan_by', 'disiapkan_at', 'PICKER'], ['dicek_by', 'dicek_at', 'PACKER']].forEach(([by, at, div]) => {
                         if (!r[by] || !r[at]) return;
                         const nm = String(r[by]).trim().toUpperCase(), d = new Date(r[at]);
-                        add(d.toLocaleDateString('en-CA'), rev[nm] || nm, div, d.getHours(), parseInt(r.total_item, 10) || 0);
+                        add(witaYmd(d), rev[nm] || nm, div, witaHour(d), parseInt(r.total_item, 10) || 0);
                     });
                 });
             }
@@ -2680,7 +3097,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const $ = id => document.getElementById(id);
         const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const fmtDate = d => { if (!d) return '-'; const p = String(d).slice(0, 10).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d; };
-        const fmtTime = t => { if (!t) return '-'; const d = new Date(t); return d.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+        const fmtTime = t => { if (!t) return '-'; const d = new Date(t); return d.toLocaleString('id-ID', { timeZone: TZ_APP, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
         const petugas = () => ($('kpPetugas').value || '').trim().toUpperCase() || '-';
         const normCard = s => String(s || '').trim().toUpperCase();
 
@@ -2726,6 +3143,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             }
             // status lama 'CEK' (sudah dicek) = selesai pack
             rows.forEach(r => { if (r.status === 'CEK') { r.status = 'PACK'; r.pack_at = r.pack_at || r.dicek_at; r.pack_by = r.pack_by || r.dicek_by; } });
+            await masLoad();
             loaded = true;
             $('kpLocalWarn').classList.toggle('hidden', mode !== 'local');
             const b = $('kpModeBadge');
@@ -2745,6 +3163,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const set = new Set(ids);
             rows.forEach(r => { if (set.has(r.id)) Object.assign(r, patch); });
             if (mode === 'local') localSave();
+            if ('status' in patch) await masTouch(ids);
         }
         async function dbDelete(ids) {
             if (!ids.length) return;
@@ -2781,31 +3200,59 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 const cDlr = findCol(keys, ['customername', 'namadealer', 'dealer']);
                 const cItm = findCol(keys, ['totalitem', 'item']);
                 const cCrd = findCol(keys, ['cardno', 'nokartu', 'kartu']);
+                const cTrs = findCol(keys, ['transorder', 'nomorto', 'noto']);
+                const cSo = findCol(keys, ['salesorder', 'nomorpo', 'purchorder']);
+                const cCfm = findCol(keys, ['dateconfirm', 'tglconfirm', 'confirm']);
+                const dOnly = v => { const t = normalizeDate(v); return (/^\d{4}-\d{2}-\d{2}/.test(t) ? t.slice(0, 10) : t) || null; };
                 const miss = [['SD Doc. No', cDel], ['Date Trans O', cTgl], ['Customer Name', cDlr], ['Total Item', cItm], ['Card No', cCrd]].filter(x => !x[1]).map(x => x[0]);
                 if (miss.length) throw new Error('Kolom tidak ditemukan: ' + miss.join(', '));
 
                 let noCard = 0, dupFile = 0;
                 const incoming = new Map();
+                const masIn = new Map();
                 json.forEach(r => {
                     const del = String(r[cDel]).trim(), card = normCard(r[cCrd]);
                     if (!del) return;
+                    // MASTER CARD X: kunci = Nomor TO + No. Delivery (kalau TO kosong, pakai No. Delivery saja).
+                    // Baris ganda di file digabung: yang kosong diisi dari baris lain, yang sudah terisi tidak ditimpa.
+                    const trs = cTrs ? String(r[cTrs]).trim() : '';
+                    const mrec = {
+                        delivery_no: del,
+                        trans_order: trs,
+                        tgl: dOnly(r[cTgl]),
+                        dealer: String(r[cDlr]).trim(),
+                        total_item: parseInt(r[cItm], 10) || 0,
+                        sales_order: cSo ? String(r[cSo]).trim() : '',
+                        card_no: card,
+                        date_confirm: cCfm ? dOnly(r[cCfm]) : null
+                    };
+                    const mk = trs ? 'T|' + trs + '|' + del : 'D|' + del, mprev = masIn.get(mk);
+                    if (mprev) Object.keys(mrec).forEach(c => { if (mBlank(mprev[c]) && !mBlank(mrec[c])) mprev[c] = mrec[c]; });
+                    else masIn.set(mk, mrec);
                     if (!card) { noCard++; return; }
-                    if (incoming.has(del)) dupFile++;
-                    incoming.set(del, {
+                    const irec = {
                         delivery_no: del,
                         tgl: normalizeDate(r[cTgl]) || null,
                         dealer: String(r[cDlr]).trim(),
                         total_item: parseInt(r[cItm], 10) || 0,
                         card_no: card
-                    });
+                    };
+                    const iprev = incoming.get(del);
+                    if (iprev) { dupFile++; Object.keys(irec).forEach(c => { if (mBlank(iprev[c]) && !mBlank(irec[c])) iprev[c] = irec[c]; }); }
+                    else incoming.set(del, irec);
                 });
 
                 const existing = new Map(rows.map(r => [r.delivery_no, r]));
+                const masDone = new Set(masRows.filter(m => m.proc_status === 'SIAP' || m.proc_status === 'PACK' || m.proc_status === 'CEK').map(m => m.delivery_no));
                 const toInsert = [], toRefresh = []; let skipped = 0;
                 incoming.forEach((v, k) => {
                     const ex = existing.get(k);
-                    if (!ex) toInsert.push(v);
-                    else if (ex.status === 'BELUM') toRefresh.push({ id: ex.id, patch: v });
+                    if (!ex) { if (masDone.has(k)) skipped++; else toInsert.push(v); }
+                    else if (ex.status === 'BELUM') {
+                        const patch = {};
+                        Object.keys(v).forEach(c => { if (c !== 'delivery_no' && mBlank(ex[c]) && !mBlank(v[c])) patch[c] = v[c]; });
+                        if (Object.keys(patch).length) toRefresh.push({ id: ex.id, patch });
+                    }
                     else skipped++;
                 });
 
@@ -2825,12 +3272,274 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     toRefresh.forEach(t => Object.assign(rows.find(r => r.id === t.id), t.patch));
                     localSave(); renderAll();
                 }
-                info.innerHTML = `✅ <b>${toInsert.length}</b> delivery baru ditambahkan, <b>${toRefresh.length}</b> diperbarui, <b>${skipped}</b> dilewati (sudah berjalan), <b>${noCard}</b> baris tanpa Card No dilewati${dupFile ? `, ${dupFile} nomor ganda di file` : ''}.`;
+                let masMsg;
+                try {
+                    // sertakan status pick & pack yang sudah ada di database kartu
+                    const exK = new Map(rows.map(r => [r.delivery_no, r]));
+                    masIn.forEach(v => { const e = exK.get(v.delivery_no); if (e) Object.assign(v, procOf(e)); });
+                    const m = await masSync(masIn, { reload: true });
+                    masMsg = `MASTER CARD X: ${m.added} baru, ${m.changed} diperbarui`;
+                } catch (e) { masMsg = `<span class="text-red-600 font-bold">gagal simpan ke MASTER CARD X: ${esc(e.message || e)}</span>`; }
+                info.innerHTML = `✅ <b>${toInsert.length}</b> delivery baru masuk CARD X, <b>${toRefresh.length}</b> diperbarui, <b>${skipped}</b> dilewati (sudah berjalan)${dupFile ? `, ${dupFile} nomor ganda di file` : ''}.<br>🧾 <b>${noCard}</b> baris tanpa Card No → tampil di OS CARD-X.<br>📚 ${masMsg}.`;
                 $('kpFile').value = '';
             } catch (e) {
                 info.innerHTML = `<span class="text-red-600 font-bold">❌ Gagal import: ${esc(e.message || e)}</span>`;
             }
         }
+
+        // ---------- MASTER CARD X: database utama semua data pick & pack ----------
+        const MAS_TABLE = 'master_cardx', LS_MAS = 'kp_master_local';
+        let masRows = [], masMode = 'cloud';
+        async function masCloudLoadAll() {
+            let all = [], from = 0;
+            while (true) {
+                const { data, error } = await supabaseClient.from(MAS_TABLE).select('*').order('tgl', { ascending: false }).order('id', { ascending: true }).range(from, from + 999);
+                if (error) throw error;
+                all = all.concat(data || []);
+                if (!data || data.length < 1000) break;
+                from += 1000;
+            }
+            return all;
+        }
+        function masLocalSave() { try { localStorage.setItem(LS_MAS, JSON.stringify(masRows)); } catch (_) {} }
+        async function masLoad() {
+            try { masRows = await masCloudLoadAll(); masMode = 'cloud'; }
+            catch (e) {
+                console.warn('Supabase master_cardx tidak tersedia, pakai penyimpanan lokal:', e);
+                masMode = 'local';
+                try { masRows = JSON.parse(localStorage.getItem(LS_MAS) || '[]'); } catch (_) { masRows = []; }
+            }
+            const w = $('kpMasLocalWarn'); if (w) w.classList.toggle('hidden', masMode !== 'local');
+        }
+        // salinan status pick & pack dari database kartu (supaya riwayat tetap ada di MASTER walau kartu dihapus)
+        const procOf = r => ({
+            proc_status: r.status === 'CEK' ? 'PACK' : r.status,
+            picker: r.disiapkan_by || null, picked_at: r.disiapkan_at || null, lokasi: r.lokasi || null,
+            packer: (r.pack_by || r.dicek_by) || null, packed_at: (r.pack_at || r.dicek_at) || null
+        });
+        // nilai dianggap kosong: null / '' / 0
+        function mBlank(v) { return v == null || (typeof v === 'string' && v.trim() === '') || v === 0; }
+        const MAS_PROC = ['proc_status', 'picker', 'picked_at', 'lokasi', 'packer', 'packed_at'];
+        // Cocokkan data masuk ke MASTER CARD X:
+        //  - punya Nomor TO  -> cari baris dengan pasangan TO + No. Delivery yang sama (satu TO boleh punya banyak delivery, satu delivery boleh ada di banyak TO;
+        //                       kalau belum ada, ambil baris delivery sama yang TO-nya masih kosong)
+        //  - tanpa Nomor TO  -> cari semua baris dengan No. Delivery yang sama
+        //  - tidak ada yang cocok -> baris baru
+        // Kolom data (tgl, dealer, item, PO, kartu, date confirm, TO) HANYA diisi kalau di database masih kosong.
+        // Kolom status pick & pack (MAS_PROC) selalu mengikuti status terbaru.
+        async function masSync(incoming, opt) {
+            opt = opt || {};
+            const recs = Array.isArray(incoming) ? incoming : [...incoming.values()];
+            const tOf = r => String(r.trans_order || '').trim();
+            const byTo = new Map(), byDel = new Map();
+            const kTo = (t, d) => t + '|' + d;
+            masRows.forEach(r => { const t = tOf(r); if (t && !byTo.has(kTo(t, r.delivery_no))) byTo.set(kTo(t, r.delivery_no), r); if (!byDel.has(r.delivery_no)) byDel.set(r.delivery_no, []); byDel.get(r.delivery_no).push(r); });
+            const nz = (c, x) => (x == null || x === '') ? '' : (/_at$/.test(c) ? String(new Date(x).getTime()) : String(x));
+            const upd = new Map(), inserts = [], newSet = new Set(), claimed = new Set();
+            const eff = ex => upd.has(ex.id) ? Object.assign({}, ex, upd.get(ex.id)) : ex;
+            const apply = (ex, v) => {
+                if (newSet.has(ex)) {   // baris baru dalam batch yang sama: isi yang kosong saja
+                    Object.keys(v).forEach(c => { if (!MAS_PROC.includes(c) && mBlank(ex[c]) && !mBlank(v[c])) ex[c] = v[c]; else if (MAS_PROC.includes(c)) ex[c] = v[c]; });
+                    return;
+                }
+                const cur = eff(ex), patch = {};
+                Object.keys(v).forEach(c => {
+                    if (c === 'delivery_no') return;
+                    const nv = v[c];
+                    if (MAS_PROC.includes(c)) { if (nz(c, cur[c]) !== nz(c, nv)) patch[c] = nv == null ? null : nv; }
+                    else if (mBlank(cur[c]) && !mBlank(nv)) patch[c] = nv;
+                });
+                if (Object.keys(patch).length) upd.set(ex.id, Object.assign(upd.get(ex.id) || {}, patch));
+            };
+            recs.forEach(v => {
+                const t = tOf(v);
+                let targets = [];
+                if (t) {
+                    let ex = byTo.get(kTo(t, v.delivery_no));
+                    if (!ex) {
+                        ex = (byDel.get(v.delivery_no) || []).find(r => !tOf(r) && !claimed.has(r.id));
+                        if (ex) { claimed.add(ex.id); byTo.set(kTo(t, v.delivery_no), ex); }
+                    }
+                    if (ex) targets = [ex];
+                } else targets = byDel.get(v.delivery_no) || [];
+                if (targets.length) { targets.forEach(ex => apply(ex, v)); return; }
+                const nr = { ...v }; inserts.push(nr); newSet.add(nr);
+                if (t) byTo.set(kTo(t, v.delivery_no), nr);
+                if (!byDel.has(v.delivery_no)) byDel.set(v.delivery_no, []);
+                byDel.get(v.delivery_no).push(nr);
+            });
+            const added = inserts.length, changed = upd.size;
+            if (masMode === 'cloud') {
+                try {
+                    if (inserts.length) {
+                        const cols = [...new Set(inserts.flatMap(o => Object.keys(o)))];
+                        const full = inserts.map(o => { const x = {}; cols.forEach(c => { x[c] = o[c] === undefined ? null : o[c]; }); return x; });
+                        for (let i = 0; i < full.length; i += 300) {
+                            const { error } = await supabaseClient.from(MAS_TABLE).insert(full.slice(i, i + 300));
+                            if (error) throw error;
+                        }
+                    }
+                    const ents = [...upd.entries()];
+                    for (let i = 0; i < ents.length; i += 25) {
+                        const res = await Promise.all(ents.slice(i, i + 25).map(([id, patch]) => supabaseClient.from(MAS_TABLE).update(patch).eq('id', id)));
+                        const bad = res.find(x => x.error); if (bad) throw bad.error;
+                    }
+                } catch (e) {
+                    if (/delivery_no/.test(String(e && e.message))) throw new Error('Database masih membatasi No. Delivery harus unik. Jalankan SQL migrasi master_cardx (hapus unique delivery_no) di Supabase dulu. Detail: ' + e.message);
+                    throw e;
+                }
+                if (opt.reload || inserts.length) await masLoad();
+                else upd.forEach((patch, id) => Object.assign(masRows.find(r => r.id === id) || {}, patch));
+            } else {
+                let nid = masRows.reduce((m, r) => Math.max(m, r.id || 0), 0);
+                upd.forEach((patch, id) => Object.assign(masRows.find(r => r.id === id) || {}, patch));
+                inserts.forEach(o => masRows.push({ id: ++nid, ...o }));
+                masLocalSave();
+            }
+            renderMaster(); renderOs();
+            return { added, changed };
+        }
+        // dipanggil setiap status kartu berubah (sorot Penyiapan / Pengecekan / batal)
+        async function masTouch(ids) {
+            try {
+                const set = new Set(ids), inc = new Map();
+                rows.forEach(r => { if (set.has(r.id)) inc.set(r.delivery_no, { delivery_no: r.delivery_no, tgl: r.tgl || null, dealer: r.dealer, total_item: r.total_item || 0, card_no: r.card_no || '', ...procOf(r) }); });
+                if (inc.size) await masSync(inc);
+            } catch (e) { console.warn('Gagal memperbarui MASTER CARD X:', e); toast('Status tersimpan, tapi gagal diperbarui di MASTER CARD X', 'warn'); }
+        }
+        async function masDelete(ids) {
+            if (!ids.length) return;
+            if (masMode === 'cloud') {
+                for (let i = 0; i < ids.length; i += 200) {
+                    const { error } = await supabaseClient.from(MAS_TABLE).delete().in('id', ids.slice(i, i + 200));
+                    if (error) throw error;
+                }
+            }
+            const set = new Set(ids);
+            masRows = masRows.filter(r => !set.has(r.id));
+            if (masMode === 'local') masLocalSave();
+        }
+        const MAS_LABEL = { NOCARD: 'Belum Ada Kartu', BELUM: 'Belum Pick', SIAP: 'Done Pick', PACK: '✔ Done Pick & Pack' };
+        const masStatus = r => !r.card_no ? 'NOCARD' : (r.proc_status === 'PACK' || r.proc_status === 'CEK') ? 'PACK' : r.proc_status === 'SIAP' ? 'SIAP' : 'BELUM';
+        function masFiltered() {
+            const q = ($('kpMasSearch').value || '').toLowerCase().trim(), st = $('kpMasStatus').value, f = $('kpMasFrom').value, t = $('kpMasTo').value;
+            const list = masRows.filter(r =>
+                (!f || (r.tgl || '') >= f) && (!t || (r.tgl || '') <= t) && (!st || masStatus(r) === st) &&
+                (!q || [r.trans_order, r.delivery_no, r.dealer, r.sales_order, r.card_no, r.picker, r.packer].some(x => String(x || '').toLowerCase().includes(q))));
+            list.sort((a, b) => String(b.tgl || '').localeCompare(String(a.tgl || '')) || String(a.dealer || '').localeCompare(String(b.dealer || '')) || String(a.delivery_no).localeCompare(String(b.delivery_no)));
+            return list;
+        }
+        function renderMaster() {
+            if (window.onMasterChanged) window.onMasterChanged();   // Pipeline ikut diperbarui
+            if (!$('kpMasBody')) return;
+            const sumItem = l => l.reduce((s, r) => s + (parseInt(r.total_item, 10) || 0), 0);
+            const cnt = s => masRows.filter(r => masStatus(r) === s).length;
+            $('kpMasStDel').textContent = masRows.length.toLocaleString();
+            $('kpMasStNo').textContent = cnt('NOCARD').toLocaleString();
+            $('kpMasStProc').textContent = (cnt('BELUM') + cnt('SIAP')).toLocaleString();
+            $('kpMasStDone').textContent = cnt('PACK').toLocaleString();
+            const list = masFiltered(), shown = list.slice(0, 5000);
+            const pill = s => `<span class="kp-pill ${s}"${s === 'NOCARD' ? ' style="background:#f1f5f9;color:#64748b"' : ''}>${MAS_LABEL[s]}</span>`;
+            $('kpMasBody').innerHTML = shown.length ? shown.map(r => { const s = masStatus(r); return `<tr class="hover:bg-slate-50">
+                    <td class="kp-td font-mono font-semibold" data-label="Nomor TO">${esc(r.trans_order || '-')}</td>
+                    <td class="kp-td font-mono font-semibold" data-label="Nomor Delivery">${esc(r.delivery_no)}</td>
+                    <td class="kp-td whitespace-nowrap" data-label="Tgl Leveling">${fmtDate(r.tgl)}</td>
+                    <td class="kp-td font-semibold" data-label="Nama Dealer">${esc(r.dealer)}</td>
+                    <td class="kp-td text-center font-bold" data-label="Total Item">${r.total_item}</td>
+                    <td class="kp-td font-mono" data-label="Nomor PO">${esc(r.sales_order || '-')}</td>
+                    <td class="kp-td text-center" data-label="No. Kartu">${r.card_no ? cardChip(r.card_no) : '<span class="text-xs font-bold text-red-500">Belum ada</span>'}</td>
+                    <td class="kp-td whitespace-nowrap" data-label="Date Confirm">${fmtDate(r.date_confirm)}</td>
+                    <td class="kp-td text-center" data-label="Status">${pill(s)}</td>
+                    <td class="kp-td text-xs" data-label="Picker">${whoCell(r.picker, r.picked_at)}${r.lokasi ? `<br><span class="text-[11px] text-emerald-700 font-bold">📍 ${esc(r.lokasi)}</span>` : ''}</td>
+                    <td class="kp-td text-xs" data-label="Packer">${whoCell(r.packer, r.packed_at)}</td>
+                    <td class="kp-td text-center kp-admin-only" data-label="Aksi"><button class="kp-btn red" onclick="kpMasDeleteOne(${r.id})">Hapus</button></td>
+                </tr>`; }).join('') : '<tr><td colspan="12" class="p-8 text-center text-slate-400 text-sm">Belum ada data. Upload file Excel Pick &amp; Pack di menu CARD X.</td></tr>';
+            $('kpMasCount').textContent = `${list.length.toLocaleString()} delivery · ${sumItem(list).toLocaleString()} item` + (list.length > 5000 ? ' (tabel menampilkan maks. 5.000 baris, gunakan filter / Export Excel)' : '');
+        }
+        window.kpRenderMaster = renderMaster;
+        window.kpMasBackfill = async function () {
+            if (!rows.length) { alert('Database kartu (CARD X) masih kosong.'); return; }
+            if (!confirm(`Salin ${rows.length} delivery dari database kartu ke MASTER CARD X (termasuk status dan nama petugas)?`)) return;
+            try {
+                const inc = new Map();
+                rows.forEach(r => inc.set(r.delivery_no, { delivery_no: r.delivery_no, tgl: r.tgl || null, dealer: r.dealer, total_item: r.total_item || 0, card_no: r.card_no || '', ...procOf(r) }));
+                const o = await masSync(inc, { reload: true });
+                toast(`MASTER CARD X: ${o.added} baru, ${o.changed} diperbarui`);
+            } catch (e) { alert('Gagal: ' + (e.message || e)); }
+        };
+        window.kpMasDeleteOne = async function (id) {
+            if (!confirm('Hapus delivery ini dari MASTER CARD X?')) return;
+            try { await masDelete([id]); renderMaster(); renderOs(); } catch (e) { alert('Gagal: ' + (e.message || e)); }
+        };
+        window.kpMasDeleteRange = async function () {
+            const f = $('kpMasFrom').value, t = $('kpMasTo').value;
+            if (!f && !t) { alert('⚠️ Pilih tanggal mulai dan/atau akhir pada filter dulu.'); return; }
+            const ids = masRows.filter(r => (!f || (r.tgl || '') >= f) && (!t || (r.tgl || '') <= t)).map(r => r.id);
+            if (!ids.length) { alert('Tidak ada data pada rentang tanggal tersebut.'); return; }
+            if (!confirm(`Hapus ${ids.length} delivery MASTER CARD X pada rentang ${f || '...'} s/d ${t || '...'}?`)) return;
+            try { await masDelete(ids); renderMaster(); renderOs(); toast(ids.length + ' data dihapus'); } catch (e) { alert('Gagal: ' + (e.message || e)); }
+        };
+        window.kpMasDeleteAll = async function () {
+            if (!masRows.length) return;
+            if (!confirm(`Hapus SEMUA ${masRows.length} data MASTER CARD X? Riwayat pick & pack ikut hilang. Tindakan ini tidak bisa dibatalkan.`)) return;
+            try { await masDelete(masRows.map(r => r.id)); renderMaster(); renderOs(); } catch (e) { alert('Gagal: ' + (e.message || e)); }
+        };
+        window.kpMasExport = function () {
+            const l = masFiltered();
+            if (!l.length) { alert('Belum ada data.'); return; }
+            const data = l.map(r => ({
+                'Nomor TO': r.trans_order || '', 'Nomor Delivery': r.delivery_no, 'Tgl Leveling': fmtDate(r.tgl), 'Nama Dealer': r.dealer, 'Total Item': r.total_item,
+                'Nomor PO': r.sales_order || '', 'No. Kartu': r.card_no || '', 'Date Confirm': r.date_confirm ? fmtDate(r.date_confirm) : '',
+                'Status': MAS_LABEL[masStatus(r)].replace('✔ ', ''), 'Picker': r.picker || '', 'Waktu Pick': r.picked_at ? fmtTime(r.picked_at) : '', 'Lokasi': r.lokasi || '',
+                'Packer': r.packer || '', 'Waktu Pack': r.packed_at ? fmtTime(r.packed_at) : ''
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'MASTER CARD X');
+            XLSX.writeFile(wb, `MASTER-CARD-X-${witaYmd(new Date())}.xlsx`);
+        };
+
+        // ---------- OS CARD-X: data MASTER CARD X yang belum punya No. Kartu ----------
+        const osView = () => masRows.filter(r => !r.card_no);
+        function renderOs() {
+            const all = osView();
+            const nb = $('kpOsBadge'); if (nb) nb.textContent = all.length;
+            if (!$('kpOsBody')) return;
+            const sumItem = l => l.reduce((s, r) => s + (parseInt(r.total_item, 10) || 0), 0);
+            const ageOf = r => { const a = tglAge(r); return a === null ? null : Math.max(0, a); };
+            $('kpOsStDel').textContent = all.length.toLocaleString();
+            $('kpOsStItem').textContent = sumItem(all).toLocaleString();
+            $('kpOsStDlr').textContent = new Set(all.map(r => String(r.dealer || '').trim().toUpperCase())).size.toLocaleString();
+            $('kpOsStOld').textContent = all.reduce((m, r) => Math.max(m, ageOf(r) || 0), 0);
+            const q = ($('kpOsSearch').value || '').toLowerCase().trim(), f = $('kpOsFrom').value, t = $('kpOsTo').value;
+            const list = all.filter(r => (!f || (r.tgl || '') >= f) && (!t || (r.tgl || '') <= t) &&
+                (!q || [r.trans_order, r.delivery_no, r.dealer, r.sales_order].some(x => String(x || '').toLowerCase().includes(q))));
+            list.sort((a, b) => String(a.tgl || '').localeCompare(String(b.tgl || '')) || String(a.dealer || '').localeCompare(String(b.dealer || '')) || String(a.delivery_no).localeCompare(String(b.delivery_no)));
+            const shown = list.slice(0, 5000);
+            $('kpOsBody').innerHTML = shown.length ? shown.map(r => {
+                const age = ageOf(r), old = age !== null && age >= URGENT_DAYS;
+                return `<tr class="hover:bg-slate-50">
+                    <td class="kp-td font-mono font-semibold" data-label="Nomor TO">${esc(r.trans_order || '-')}</td>
+                    <td class="kp-td font-mono font-semibold" data-label="Nomor Delivery">${esc(r.delivery_no)}</td>
+                    <td class="kp-td whitespace-nowrap" data-label="Tgl Leveling">${fmtDate(r.tgl)}</td>
+                    <td class="kp-td font-semibold" data-label="Nama Dealer">${esc(r.dealer)}</td>
+                    <td class="kp-td text-center font-bold" data-label="Total Item">${r.total_item}</td>
+                    <td class="kp-td font-mono" data-label="Nomor PO">${esc(r.sales_order || '-')}</td>
+                    <td class="kp-td text-center" data-label="Umur">${age === null ? '-' : `<span class="kp-pill" style="background:#f1f5f9;color:${old ? '#334155' : '#64748b'}">${old ? '⏳ ' : ''}${age} hari</span>`}</td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="7" class="p-8 text-center text-slate-400 text-sm">Tidak ada data. Semua delivery di MASTER CARD X sudah punya No. Kartu.</td></tr>';
+            $('kpOsCount').textContent = `${list.length} delivery · ${sumItem(list).toLocaleString()} item belum punya No. Kartu` + (list.length > 5000 ? ' (tabel menampilkan maks. 5.000 baris, gunakan filter)' : '');
+        }
+        window.kpRenderOs = renderOs;
+        window.kpOsExport = function () {
+            const l = osView();
+            if (!l.length) { alert('Belum ada data.'); return; }
+            const data = l.slice().sort((a, b) => String(a.tgl || '').localeCompare(String(b.tgl || '')) || String(a.dealer || '').localeCompare(String(b.dealer || ''))).map(r => ({
+                'Nomor TO': r.trans_order || '', 'Nomor Delivery': r.delivery_no, 'Tgl Leveling': fmtDate(r.tgl), 'Nama Dealer': r.dealer, 'Total Item': r.total_item, 'Nomor PO': r.sales_order || ''
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'OS CARD-X');
+            XLSX.writeFile(wb, `OS-CARD-X-${witaYmd(new Date())}.xlsx`);
+        };
 
         // ---------- Scan ----------
         async function scan(kind) {
@@ -2903,8 +3612,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             if (!r || !r.tgl) return null;
             const p = String(r.tgl).slice(0, 10).split('-').map(Number);
             if (p.length < 3 || p.some(isNaN)) return null;
-            const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-            return Math.round((t0 - new Date(p[0], p[1] - 1, p[2])) / 86400000);
+            const w = witaYmd(new Date()).split('-').map(Number);
+            return Math.round((Date.UTC(w[0], w[1] - 1, w[2]) - Date.UTC(p[0], p[1] - 1, p[2])) / 86400000);
         };
         const isUrgentPick = r => { if (r.status !== 'BELUM') return false; const a = tglAge(r); return a !== null && a >= URGENT_DAYS; };
         const statRows = () => (isAdminU() && (window.kpCtx || 'db') === 'db') ? rows : vrows();
@@ -2943,12 +3652,12 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         function renderDb() {
             const q = ($('kpFSearch').value || '').toLowerCase().trim();
             const st = $('kpFStatus').value, f = $('kpFFrom').value, t = $('kpFTo').value;
-            const list = rows.filter(r =>
+            const list = rows.filter(r => r.status === 'BELUM' &&
                 (!st || (st === 'PRI' ? isPri(r) : r.status === st)) && (!f || (r.tgl || '') >= f) && (!t || (r.tgl || '') <= t) &&
                 (!q || [r.delivery_no, r.dealer, r.card_no].some(x => String(x || '').toLowerCase().includes(q)))
             );
             list.sort((a, b) => priCmp(a.card_no, b.card_no));
-            const shown = list.slice(0, 500);
+            const shown = list.slice(0, 5000);
             $('kpDbBody').innerHTML = shown.length ? shown.map(r => `
                 <tr class="hover:bg-slate-50">
                     <td class="kp-td font-mono font-semibold" data-label="No. Delivery">${esc(r.delivery_no)}</td>
@@ -2960,15 +3669,15 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     <td class="kp-td text-xs" data-label="Picker">${whoCell(r.disiapkan_by, r.disiapkan_at)}${r.lokasi ? `<br><span class="text-[11px] text-emerald-700 font-bold">📍 ${esc(r.lokasi)}</span>` : ''}</td>
                     <td class="kp-td text-xs" data-label="Packer">${whoCell(r.pack_by || r.dicek_by, r.pack_at || r.dicek_at)}</td>
                     <td class="kp-td text-center kp-admin-only" data-label="Aksi"><button class="kp-btn red" onclick="kpDeleteOne(${r.id})">Hapus</button></td>
-                </tr>`).join('') : '<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">Belum ada data. Upload file Excel picking di atas.</td></tr>';
-            $('kpDbCount').textContent = `Total ${list.reduce((s, r) => s + (parseInt(r.total_item, 10) || 0), 0).toLocaleString()} item` + (list.length > 500 ? ' (tabel menampilkan maks. 500 baris, gunakan filter)' : '');
+                </tr>`).join('') : '<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">Tidak ada kartu yang menunggu disorot. Upload file Excel picking di atas, atau lihat riwayat lengkap di MASTER CARD X.</td></tr>';
+            $('kpDbCount').textContent = `Total ${list.reduce((s, r) => s + (parseInt(r.total_item, 10) || 0), 0).toLocaleString()} item` + (list.length > 5000 ? ' (tabel menampilkan maks. 5.000 baris, gunakan filter)' : '');
         }
 
         function renderLog(kind) {
             const el = $(kind === 'siap' ? 'kpLogSiap' : 'kpLogCek');
             const res = $(kind === 'siap' ? 'kpResSiap' : 'kpResCek');
             el.innerHTML = logs[kind].length ? logs[kind].map(l => `
-                <div class="kp-log ${l.type}"><div class="flex justify-between gap-3"><b class="tracking-wider">${esc(l.title)}</b><span class="text-[11px] opacity-70">${l.time.toLocaleTimeString('id-ID')}</span></div><div class="text-xs mt-0.5">${esc(l.msg)}</div></div>`).join('')
+                <div class="kp-log ${l.type}"><div class="flex justify-between gap-3"><b class="tracking-wider">${esc(l.title)}</b><span class="text-[11px] opacity-70">${l.time.toLocaleTimeString('id-ID', { timeZone: TZ_APP })}</span></div><div class="text-xs mt-0.5">${esc(l.msg)}</div></div>`).join('')
                 : '<p class="text-sm text-slate-400">Belum ada kartu yang disorot.</p>';
             const last = logs[kind][0];
             res.innerHTML = last ? `<div class="kp-log ${last.type}"><div class="text-[11px] font-bold uppercase opacity-70 mb-1">${last.type === 'ok' ? 'Berhasil' : last.type === 'warn' ? 'Perhatian' : 'Gagal'}</div><div class="text-2xl font-black tracking-widest">${esc(last.title)}</div><div class="text-xs mt-1">${esc(last.msg)}</div></div>` : '';
@@ -3102,13 +3811,13 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             renderAll();
         };
 
-        function renderAll() { renderStats(); renderDb(); renderLog('siap'); renderLog('cek'); renderOos(); renderOop(); renderAsg(); renderMine(); if (window.onKartuChanged) window.onKartuChanged(); }
+        function renderAll() { renderStats(); renderDb(); renderLog('siap'); renderLog('cek'); renderOos(); renderOop(); renderOs(); renderMaster(); renderAsg(); renderMine(); if (window.onKartuChanged) window.onKartuChanged(); }
 
         // ---------- Actions (global) ----------
         window.kpCurrent = 'db';
         window.kpGo = function (name) { window.kpCurrent = name; try { localStorage.setItem('kp_last_menu', name); } catch (_) {} if (window.canAccess && !window.canAccess('kp-' + name)) return; switchTab('kartu'); kpTab(name); };
         // menu -> konteks tampilan kartu: Database = semua, Picking/Penyiapan = picking, Pengecekan/Packing = packing
-        const CTX = { db: 'db', oop: 'pick', siap: 'pick', cek: 'pack', oos: 'pack' };
+        const CTX = { db: 'db', os: 'os', master: 'master', oop: 'pick', siap: 'pick', cek: 'pack', oos: 'pack' };
         function applyCtx(name) {
             const c = CTX[name] || 'db';
             window.kpCtx = c;
@@ -3218,15 +3927,16 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             }));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Kartu Picking');
-            XLSX.writeFile(wb, `Kartu-Picking-${new Date().toISOString().slice(0, 10)}.xlsx`);
+            XLSX.writeFile(wb, `Kartu-Picking-${witaYmd(new Date())}.xlsx`);
         };
 
         window.kpGetRows = () => rows;
+        window.kpGetMaster = () => masRows;
         // ---- pembatasan role ----
         const ROLE = () => (window.APP_USER && window.APP_USER.role) || '';
         const deny = () => alert('⛔ Akses ditolak untuk role Anda.');
         const guardFn = (name, roles) => { const f = window[name]; window[name] = function () { if (!roles.includes(ROLE())) { deny(); return; } return f.apply(this, arguments); }; };
-        ['kpImport', 'kpRevert', 'kpDeleteOne', 'kpDeleteRange', 'kpDeleteAll'].forEach(n => guardFn(n, ['ADMIN']));
+        ['kpImport', 'kpRevert', 'kpDeleteOne', 'kpDeleteRange', 'kpDeleteAll', 'kpMasBackfill', 'kpMasDeleteOne', 'kpMasDeleteRange', 'kpMasDeleteAll'].forEach(n => guardFn(n, ['ADMIN']));
         guardFn('kpPack', ['ADMIN', 'CREW']);
         { const f = window.kpScan; window.kpScan = function (kind) { const ok = kind === 'siap' ? ['ADMIN', 'CREW'] : ['ADMIN', 'CREW']; if (!ok.includes(ROLE())) { deny(); return; } return f.apply(this, arguments); }; }
 
@@ -3288,7 +3998,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 $('ketWho').innerHTML = (window.rosterList ? window.rosterList() : []).map(r => `<option value="${esc(r.nama)}">${esc(r.nama)} (${r.div.charAt(0) + r.div.slice(1).toLowerCase()})</option>`).join('');
                 if (cur) $('ketWho').value = cur;
             } else $('ketNama').value = who();
-            if (!$('ketTgl').value) $('ketTgl').value = new Date().toLocaleDateString('en-CA');
+            if (!$('ketTgl').value) $('ketTgl').value = witaYmd(new Date());
             msg('', true);
             await load();
             ketFill();
@@ -3412,7 +4122,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 if (cur) $('rcvWho').value = cur;
             } else $('rcvNama').value = who();
             $('rcvTarget').textContent = target();
-            if (!$('rcvTgl').value) $('rcvTgl').value = new Date().toLocaleDateString('en-CA');
+            if (!$('rcvTgl').value) $('rcvTgl').value = witaYmd(new Date());
             msg('', true);
             await load();
             rcvFill();
@@ -3489,15 +4199,15 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
 
         // ---------- laporan admin ----------
         let rrChart = null, rrData = [];
-        const ymd = d => d.toLocaleDateString('en-CA');
+        const ymd = d => witaYmd(d);
         const dm = t => t.slice(8, 10) + '/' + t.slice(5, 7);
         window.rcvRepPreset = function (n) {
-            const to = new Date(), from = new Date();
-            if (n === 0) from.setDate(1); else from.setDate(from.getDate() - (n - 1));
+            const to = new Date(); let from;
+            if (n === 0) { const w = witaYmd(to).split('-').map(Number); from = witaFromWall(w[0], w[1], 1); } else from = new Date(to.getTime() - (n - 1) * 86400000);
             $('rrFrom').value = ymd(from); $('rrTo').value = ymd(to); rcvRepRender();
         };
         window.rcvRepOpen = async function () {
-            if (!$('rrFrom').value && !$('rrTo').value) { const to = new Date(), from = new Date(); from.setDate(from.getDate() - 29); $('rrFrom').value = ymd(from); $('rrTo').value = ymd(to); }
+            if (!$('rrFrom').value && !$('rrTo').value) { const to = new Date(), from = new Date(to.getTime() - 29 * 86400000); $('rrFrom').value = ymd(from); $('rrTo').value = ymd(to); }
             await load();
         };
         window.rcvRepRender = function () {
@@ -3561,8 +4271,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const BAGIAN = ['PENYIAPAN', 'PENGECEKAN'];
         const BAGIAN_HOME = { PENYIAPAN: 'kp-siap', PENGECEKAN: 'kp-cek' };
         const MENUS = {
-            ADMIN: ['gudang', 'tv', 'mp', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
-            CREW: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos']
+            ADMIN: ['gudang', 'tv', 'pipeline', 'mp', 'ket', 'rcv', 'rcv-rep', 'honda', 'kp-db', 'kp-master', 'kp-os', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos', 'users'],
+            CREW: ['gudang', 'mp', 'ket', 'rcv', 'rcv-rep', 'kp-db', 'kp-oop', 'kp-siap', 'kp-cek', 'kp-oos']   // MASTER CARD X & OS CARD-X khusus admin
         };
         let users = [], mode = 'cloud', me = null, usingDefault = false, loginTab = 'crew';
         const $ = id => document.getElementById(id);
@@ -3777,7 +4487,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     <td class="kp-td">${adm ? 'Admin' : 'Crew'}</td>
                     <td class="kp-td">${adm ? '<span class="text-slate-300">-</span>' : esc(DIV_LABEL[divOf(u)] || '-')}</td>
                     <td class="kp-td text-center"><span class="kp-pill ${u.aktif === false ? 'BELUM' : 'PACK'}">${u.aktif === false ? 'Nonaktif' : 'Aktif'}</span></td>
-                    <td class="kp-td text-xs whitespace-nowrap">${u.last_login ? new Date(u.last_login).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                    <td class="kp-td text-xs whitespace-nowrap">${u.last_login ? new Date(u.last_login).toLocaleString('id-ID', { timeZone: TZ_APP, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                     <td class="kp-td text-center whitespace-nowrap">
                         ${adm ? `<button class="kp-btn gray" onclick="authReset(${u.id})">Reset PW</button>` : ''}
                         ${self ? '' : `<button class="kp-btn gray" onclick="authToggle(${u.id})">${u.aktif === false ? 'Aktifkan' : 'Nonaktifkan'}</button><button class="kp-btn red" onclick="authDel(${u.id})">Hapus</button>`}
@@ -3788,7 +4498,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         window.authRenderActivity = function () {
             const rows = (window.kpGetRows && kpGetRows()) || [];
             const d = $('usrActDate').value;
-            const day = ts => ts ? new Date(ts).toLocaleDateString('en-CA') : '';
+            const day = ts => ts ? witaYmd(new Date(ts)) : '';
             const cnt = (nama, byF, atF) => new Set(rows.filter(r => String(r[byF] || '').toUpperCase() === nama && (!d || day(r[atF]) === d)).map(r => r.card_no + '|' + day(r[atF]))).size;
             $('usrActBody').innerHTML = users.filter(u => !isAdmin(u)).map(u => {
                 const n = String(u.nama).toUpperCase();
@@ -3799,7 +4509,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             }).join('') || '<tr><td colspan="5" class="p-6 text-center text-slate-400 text-sm">Belum ada crew terdaftar.</td></tr>';
         };
         window.authOnOpenUsers = function () {
-            if (!$('usrActDate').value) $('usrActDate').value = new Date().toLocaleDateString('en-CA');
+            if (!$('usrActDate').value) $('usrActDate').value = witaYmd(new Date());
             authNuToggle(); renderUsers(); authRenderActivity();
         };
         window.authAddUser = async function () {
@@ -3858,5 +4568,100 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         })();
     })();
     </script>
+
+<script>
+/* ===== Pagination 25 baris/halaman + Export Excel untuk semua tabel data ===== */
+(function () {
+    var SIZE = 25;
+    // [id elemen, mode ('tb' = tbody, 'box' = div berisi tabel, 'x' = tanpa paging, export saja), nama file export (null = sudah ada tombol export sendiri)]
+    var CFG = [
+        ['modalTableBody', 'tb', 'Rincian-Pencapaian'],
+        ['kpDbBody', 'tb', null], ['kpMasBody', 'tb', null], ['kpOsBody', 'tb', null], ['rrBody', 'tb', null],
+        ['kpOopBody', 'tb', 'Outstanding-Picking'], ['kpOosBody', 'tb', 'Outstanding-Packing'], ['kpUrgBody', 'tb', 'Kartu-Urgent'],
+        ['usrBody', 'tb', 'Daftar-User'], ['usrActBody', 'tb', 'Aktivitas-Crew'],
+        ['kpAsgList', 'box', 'Pembagian-Kartu'], ['plDetail', 'box', 'Detail-Pallet'],
+        ['perfBody', 'x', 'Performa']
+    ];
+    var clean = function (t) { return String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); };
+    var isPh = function (tr) { return Array.prototype.some.call(tr.children, function (td) { return td.colSpan > 1; }); };
+    var btnCls = 'px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed';
+
+    function toAOA(table, trs) {
+        var ths = Array.prototype.slice.call(table.querySelectorAll('thead th')), keep = [];
+        ths.forEach(function (th, i) { var h = clean(th.textContent); if (h && h.toLowerCase() !== 'aksi') keep.push(i); });
+        var head = keep.map(function (i) { return clean(ths[i].textContent); });
+        var body = trs.map(function (tr) {
+            return keep.map(function (i) {
+                var v = clean(tr.children[i] ? tr.children[i].textContent : '');
+                return /^(0|[1-9]\d{0,13})$/.test(v) ? Number(v) : v;
+            });
+        });
+        return [head].concat(body);
+    }
+    function doExport(st, trs) {
+        var tb = st.tb(); var table = tb && tb.closest('table');
+        if (!table || !trs.length) { alert('Tidak ada data untuk di-export.'); return; }
+        var aoa = toAOA(table, trs), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Data');
+        XLSX.writeFile(wb, st.cfg[2] + '-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    }
+    function bind(cfg) {
+        var el = document.getElementById(cfg[0]); if (!el) return;
+        var st = { cfg: cfg, el: el, all: [], page: 1, busy: false, bar: document.createElement('div') };
+        st.tb = function () { return el.tagName === 'TBODY' ? el : el.querySelector('tbody'); };
+        st.bar.className = 'pg-bar flex flex-wrap items-center justify-between gap-2 mt-3 text-xs'; st.bar.style.display = 'none';
+        var table = el.tagName === 'TBODY' ? el.closest('table') : null;
+        (table ? table.parentElement : el).insertAdjacentElement('afterend', st.bar);
+        var real = function () { return st.all.filter(function (r) { return !isPh(r); }); };
+        var obs;
+        function bar() {
+            var n = real().length, pages = Math.max(1, Math.ceil(st.all.length / SIZE));
+            if (!n) { st.bar.style.display = 'none'; return; }
+            var from = (st.page - 1) * SIZE + 1, to = Math.min(st.page * SIZE, n);
+            var paged = cfg[1] !== 'x', nav = paged && pages > 1;
+            st.bar.style.display = '';
+            st.bar.innerHTML = '<span class="font-semibold text-slate-500">' + (paged ? 'Menampilkan ' + from + '–' + to + ' dari ' + n.toLocaleString('id-ID') + ' baris' : n.toLocaleString('id-ID') + ' baris') + '</span>' +
+                (nav ? '<div class="flex items-center gap-1"><button data-a="first" class="' + btnCls + '">«</button><button data-a="prev" class="' + btnCls + '">‹</button><span class="px-2 font-bold text-slate-600">Hal ' + st.page + ' / ' + pages + '</span><button data-a="next" class="' + btnCls + '">›</button><button data-a="last" class="' + btnCls + '">»</button></div>' : '<span></span>') +
+                (cfg[2] ? '<button data-a="exp" class="px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100">📥 Export Excel</button>' : '');
+            var dis = function (a, v) { var b = st.bar.querySelector('[data-a="' + a + '"]'); if (b) b.disabled = v; };
+            dis('first', st.page <= 1); dis('prev', st.page <= 1); dis('next', st.page >= pages); dis('last', st.page >= pages);
+        }
+        function draw() {
+            var tb = st.tb(), pages = Math.max(1, Math.ceil(st.all.length / SIZE));
+            st.page = Math.min(Math.max(1, st.page), pages);
+            if (tb && cfg[1] !== 'x') {
+                st.busy = true;
+                while (tb.firstChild) tb.removeChild(tb.firstChild);
+                st.all.slice((st.page - 1) * SIZE, st.page * SIZE).forEach(function (r) { tb.appendChild(r); });
+                st.busy = false; obs.takeRecords();
+            }
+            bar();
+        }
+        function sync() {
+            if (st.busy) return;
+            var tb = st.tb(), rows = tb ? Array.prototype.filter.call(tb.children, function (n) { return n.tagName === 'TR'; }) : [];
+            if (rows.length !== st.all.length) st.page = 1;
+            st.all = rows; draw();
+        }
+        obs = new MutationObserver(sync); obs.observe(el, { childList: true });
+        st.bar.addEventListener('click', function (e) {
+            var a = e.target && e.target.getAttribute && e.target.getAttribute('data-a'); if (!a) return;
+            var pages = Math.max(1, Math.ceil(st.all.length / SIZE));
+            if (a === 'first') st.page = 1; else if (a === 'prev') st.page--; else if (a === 'next') st.page++; else if (a === 'last') st.page = pages;
+            else if (a === 'exp') {
+                if (cfg[0] === 'perfBody' && typeof renderPerf === 'function') {   // buka semua tanggal dulu, baru export
+                    var keep = window._perfPER; window._perfPER = 100000;
+                    try { renderPerf(); doExport(st, real()); } finally { window._perfPER = keep; renderPerf(); }
+                } else doExport(st, real());
+                return;
+            }
+            draw();
+        });
+        sync();
+    }
+    function init() { CFG.forEach(bind); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
 </body>
 </html>
