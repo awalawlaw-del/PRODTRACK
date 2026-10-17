@@ -2872,28 +2872,81 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
 
         function downloadImage() { html2canvas(document.getElementById('captureArea')).then(c => { let a = document.createElement('a'); a.download = 'Laporan.png'; a.href = c.toDataURL(); a.click(); }); }
         
-        // --- UPLOAD EXCEL OTOMATIS KE CLOUD SUPABASE ---
-        document.getElementById('excelFile').addEventListener('change', function(e) {
-            if (!(window.APP_USER && window.APP_USER.role === 'ADMIN')) { alert('⛔ Hanya admin yang boleh upload.'); e.target.value = ''; return; }
+        // --- UPLOAD EXCEL OTOMATIS KE CLOUD SUPABASE (anti-dobel) ---
+        // Kunci baris: semua kolom (nama kolom diurutkan, teks di-trim, sel kosong diabaikan),
+        // jadi baris dengan tanggal/jam/detik berbeda dianggap baris baru.
+        function gdRowKey(row) {
+            const o = {};
+            Object.keys(row).sort().forEach(k => {
+                let v = row[k];
+                if (v === null || v === undefined) return;
+                if (typeof v === 'string') { v = v.trim(); if (v === '') return; }
+                else if (typeof v === 'number') v = String(Math.round(v * 1e6) / 1e6);   // dibulatkan 6 desimal, sama dengan kirim_supabase.py
+                o[String(k).trim()] = v;
+            });
+            return JSON.stringify(o);
+        }
+        // Ambil seluruh data_row dari cloud (per 1000 baris karena Supabase membatasi hasil per request)
+        async function gdFetchAllRows() {
+            const all = [], PAGE = 1000;
+            for (let from = 0; ; from += PAGE) {
+                const { data, error } = await supabaseClient.from('gudang_data').select('data_row').order('id', { ascending: true }).range(from, from + PAGE - 1);
+                if (error) throw error;
+                if (!data || !data.length) break;
+                data.forEach(r => all.push(r.data_row));
+                if (data.length < PAGE) break;
+            }
+            return all;
+        }
+        document.getElementById('excelFile').addEventListener('change', function(ev) {
+            const input = ev.target;
+            if (!(window.APP_USER && window.APP_USER.role === 'ADMIN')) { alert('⛔ Hanya admin yang boleh upload.'); input.value = ''; return; }
+            const file = input.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array', raw: true});
-                let newData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
-                
-                let rowsToInsert = newData.map(row => ({ data_row: row }));
-                let { error } = await supabaseClient.from('gudang_data').insert(rowsToInsert);
+                try {
+                    const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array', raw: true});
+                    const newData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
 
-                if (!error) {
-                    excelData = [...excelData, ...newData];
+                    // 1. Hitung baris yang sudah ada di cloud (data terbaru, bukan cache layar)
+                    const existing = await gdFetchAllRows();
+                    const have = new Map();
+                    existing.forEach(r => { const k = gdRowKey(r); have.set(k, (have.get(k) || 0) + 1); });
+
+                    // 2. Baris file yang sudah ada di cloud dilewati (jumlah kembar asli tetap dihormati)
+                    const toAdd = [];
+                    let skipped = 0;
+                    newData.forEach(row => {
+                        const k = gdRowKey(row);
+                        const n = have.get(k) || 0;
+                        if (n > 0) { have.set(k, n - 1); skipped++; }
+                        else toAdd.push(row);
+                    });
+
+                    if (!toAdd.length) {
+                        alert(`ℹ️ Tidak ada baris baru. Semua ${newData.length} baris di file sudah ada di Cloud (dilewati, tidak didobel).`);
+                        return;
+                    }
+
+                    // 3. Simpan hanya baris baru, per 500 baris
+                    for (let i = 0; i < toAdd.length; i += 500) {
+                        const { error } = await supabaseClient.from('gudang_data').insert(toAdd.slice(i, i + 500).map(row => ({ data_row: row })));
+                        if (error) throw error;
+                    }
+
+                    excelData = [...excelData, ...toAdd];
                     generateGlobalSummary();
                     processData();
                     updateHondaIntegratedChart();
-                    alert("✅ Data berhasil disimpan ke Cloud (Supabase)!");
-                } else {
-                    alert("❌ Gagal menyimpan ke cloud: " + error.message);
+                    alert(`✅ Upload selesai.\n• ${toAdd.length} baris baru disimpan ke Cloud\n• ${skipped} baris sudah ada, dilewati (tidak didobel)`);
+                } catch (err) {
+                    alert("❌ Gagal menyimpan ke cloud: " + (err && err.message ? err.message : err));
+                } finally {
+                    input.value = '';   // supaya file yang sama bisa dipilih lagi
                 }
             };
-            if(e.target.files[0]) reader.readAsArrayBuffer(e.target.files[0]);
+            reader.readAsArrayBuffer(file);
         });
 
         // ==========================================
