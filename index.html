@@ -2940,6 +2940,29 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             }
             return all;
         }
+        // Ambil id + data_row (id dibutuhkan untuk mengganti data per tanggal)
+        async function gdFetchAllRowsWithId() {
+            const all = [], PAGE = 1000;
+            for (let from = 0; ; from += PAGE) {
+                const { data, error } = await supabaseClient.from('gudang_data').select('id, data_row').order('id', { ascending: true }).range(from, from + PAGE - 1);
+                if (error) throw error;
+                if (!data || !data.length) break;
+                data.forEach(r => all.push({ id: r.id, row: r.data_row }));
+                if (data.length < PAGE) break;
+            }
+            return all;
+        }
+        // Tanggal sebuah baris (format sama dengan yang dipakai processData)
+        function gdRowDate(row) {
+            if (!row) return '';
+            const k = getColumnKey(row, ['tanggal','tgl','date']);
+            return k ? normalizeDate(row[k]) : '';
+        }
+        const gdSig = rows => rows.map(gdRowKey).sort().join('\n');
+
+        // UPLOAD = GANTI PER TANGGAL:
+        // tanggal yang ada di file akan menimpa seluruh data lama di tanggal yang sama (tidak dobel).
+        // Tanggal yang isinya persis sama dengan di cloud dilewati. Tanggal lain tidak disentuh.
         document.getElementById('excelFile').addEventListener('change', function(ev) {
             const input = ev.target;
             if (!(window.APP_USER && window.APP_USER.role === 'ADMIN')) { alert('⛔ Hanya admin yang boleh upload.'); input.value = ''; return; }
@@ -2951,37 +2974,71 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array', raw: true});
                     const newData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
 
-                    // 1. Hitung baris yang sudah ada di cloud (data terbaru, bukan cache layar)
-                    const existing = await gdFetchAllRows();
-                    const have = new Map();
-                    existing.forEach(r => { const k = gdRowKey(r); have.set(k, (have.get(k) || 0) + 1); });
+                    const existing = await gdFetchAllRowsWithId();
 
-                    // 2. Baris file yang sudah ada di cloud dilewati (jumlah kembar asli tetap dihormati)
-                    const toAdd = [];
-                    let skipped = 0;
+                    // 1. Kelompokkan baris file per tanggal (baris tanpa tanggal ditangani terpisah)
+                    const newByDate = new Map(), newNoDate = [];
                     newData.forEach(row => {
-                        const k = gdRowKey(row);
-                        const n = have.get(k) || 0;
-                        if (n > 0) { have.set(k, n - 1); skipped++; }
-                        else toAdd.push(row);
+                        const d = gdRowDate(row);
+                        if (!d) { newNoDate.push(row); return; }
+                        if (!newByDate.has(d)) newByDate.set(d, []);
+                        newByDate.get(d).push(row);
                     });
 
-                    if (!toAdd.length) {
-                        alert(`ℹ️ Tidak ada baris baru. Semua ${newData.length} baris di file sudah ada di Cloud (dilewati, tidak didobel).`);
+                    // 2. Kelompokkan data lama di cloud untuk tanggal yang ada di file
+                    const oldByDate = new Map(), haveNoDate = new Map();
+                    existing.forEach(x => {
+                        const d = gdRowDate(x.row);
+                        if (!d) { const k = gdRowKey(x.row); haveNoDate.set(k, (haveNoDate.get(k) || 0) + 1); return; }
+                        if (!newByDate.has(d)) return;
+                        if (!oldByDate.has(d)) oldByDate.set(d, []);
+                        oldByDate.get(d).push(x);
+                    });
+
+                    // 3. Tentukan tanggal yang benar-benar berubah
+                    const toInsert = [], idsToDelete = [], report = [];
+                    let unchangedDates = 0;
+                    [...newByDate.keys()].sort().forEach(d => {
+                        const nRows = newByDate.get(d), oRows = oldByDate.get(d) || [];
+                        if (oRows.length && gdSig(nRows) === gdSig(oRows.map(x => x.row))) { unchangedDates++; return; }
+                        nRows.forEach(r => toInsert.push(r));
+                        oRows.forEach(x => idsToDelete.push(x.id));
+                        report.push(`• ${d}: ${oRows.length ? oRows.length + ' baris lama diganti ' + nRows.length + ' baris baru' : nRows.length + ' baris baru (tanggal baru)'}`);
+                    });
+
+                    // 4. Baris tanpa tanggal: tetap anti-dobel seperti sebelumnya
+                    let skippedNoDate = 0;
+                    newNoDate.forEach(row => {
+                        const k = gdRowKey(row), n = haveNoDate.get(k) || 0;
+                        if (n > 0) { haveNoDate.set(k, n - 1); skippedNoDate++; }
+                        else { toInsert.push(row); report.push('• 1 baris tanpa tanggal ditambahkan'); }
+                    });
+
+                    if (!toInsert.length && !idsToDelete.length) {
+                        alert(`ℹ️ Tidak ada perubahan. Data di file (${newData.length} baris, ${unchangedDates} tanggal) sudah sama dengan yang ada di Cloud.`);
                         return;
                     }
 
-                    // 3. Simpan hanya baris baru, per 500 baris
-                    for (let i = 0; i < toAdd.length; i += 500) {
-                        const { error } = await supabaseClient.from('gudang_data').insert(toAdd.slice(i, i + 500).map(row => ({ data_row: row })));
+                    // 5. Konfirmasi sebelum menimpa
+                    const shown = report.slice(0, 15).join('\n') + (report.length > 15 ? `\n… dan ${report.length - 15} tanggal lain` : '');
+                    if (idsToDelete.length && !confirm(`Upload ini akan MENGGANTI data pada tanggal yang sama:\n\n${shown}\n\n${unchangedDates} tanggal lain tidak berubah (dilewati).\nLanjutkan?`)) return;
+
+                    // 6. Simpan baris baru dulu (kalau gagal, data lama masih utuh), baru hapus baris lama
+                    for (let i = 0; i < toInsert.length; i += 500) {
+                        const { error } = await supabaseClient.from('gudang_data').insert(toInsert.slice(i, i + 500).map(row => ({ data_row: row })));
+                        if (error) throw error;
+                    }
+                    for (let i = 0; i < idsToDelete.length; i += 200) {
+                        const { error } = await supabaseClient.from('gudang_data').delete().in('id', idsToDelete.slice(i, i + 200));
                         if (error) throw error;
                     }
 
-                    excelData = [...excelData, ...toAdd];
+                    // 7. Muat ulang dari cloud supaya tampilan pasti sama dengan isi cloud
+                    excelData = await gdFetchAllRows();
                     generateGlobalSummary();
                     processData();
                     updateHondaIntegratedChart();
-                    alert(`✅ Upload selesai.\n• ${toAdd.length} baris baru disimpan ke Cloud\n• ${skipped} baris sudah ada, dilewati (tidak didobel)`);
+                    alert(`✅ Upload selesai.\n• ${toInsert.length} baris baru disimpan\n• ${idsToDelete.length} baris lama (tanggal yang sama) dihapus/diganti\n• ${unchangedDates} tanggal tidak berubah, dilewati`);
                 } catch (err) {
                     alert("❌ Gagal menyimpan ke cloud: " + (err && err.message ? err.message : err));
                 } finally {
