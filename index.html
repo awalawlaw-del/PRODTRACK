@@ -2953,10 +2953,13 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             return all;
         }
         // Tanggal sebuah baris (format sama dengan yang dipakai processData)
+        // Kolom tanggal dipilih dengan urutan tetap (pendek dulu, lalu abjad = urutan kunci jsonb Supabase)
+        // supaya baris dari file dan dari cloud selalu memilih kolom yang sama (sama dengan kirim_supabase.py).
         function gdRowDate(row) {
             if (!row) return '';
-            const k = getColumnKey(row, ['tanggal','tgl','date']);
-            return k ? normalizeDate(row[k]) : '';
+            const ks = Object.keys(row).filter(x => ['tanggal','tgl','date'].some(k => x.toLowerCase().includes(k)))
+                .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
+            return ks.length ? normalizeDate(row[ks[0]]) : '';
         }
         const gdSig = rows => rows.map(gdRowKey).sort().join('\n');
 
