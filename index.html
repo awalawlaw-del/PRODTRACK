@@ -1302,7 +1302,7 @@ create policy "rm_all" on receiver_masuk for all using (true) with check (true);
         </div>
     </div>
 
-    <!-- PIPELINE (OS Leveling > Picking > Packing > Good Issue > Shipment) -->
+    <!-- PIPELINE (OS Rilis > Picking > Packing > Good Issue > Shipment) -->
     <div id="section-pipeline" class="app-section p-4 md:p-8">
         <div class="max-w-7xl mx-auto">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4">
@@ -1598,10 +1598,10 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         }
         function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('open'); }
 
-                // ===== PIPELINE: OS Leveling > Picking > Packing > Good Issue > Shipment =====
+                // ===== PIPELINE: OS Rilis > Picking > Packing > Good Issue > Shipment =====
         const PL_STAGES = [
             { k: 'GR', n: 'OS GR', ic: '📥', note: 'Belum ada data' },
-            { k: 'LEVELING', n: 'OS Leveling', ic: '⚖️', note: 'Belum ada data' },
+            { k: 'LEVELING', n: 'OS Rilis', ic: '⚖️', note: 'Belum ada data' },
             { k: 'PICKING', n: 'OS Picking', ic: '🛒' },
             { k: 'PACKING', n: 'OS Packing', ic: '📦' },
             { k: 'GI', n: 'OS Good Issue', ic: '📤' },
@@ -1614,8 +1614,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const m = (window.kpGetMaster && window.kpGetMaster()) || [], bl = v => v == null || String(v).trim() === '';
             const src = k === 'PICKING' ? m.filter(r => bl(r.date_confirm)) : m.filter(r => !bl(r.date_confirm) && bl(r.packer));
             return src.map(r => {
-                const d = plDate(k === 'PICKING' ? (r.tgl || r.created_at) : r.date_confirm) || new Date();
-                return { id: 'm' + r.id, stage: k, ref_no: r.delivery_no, gkey: (r.trans_order || '') + '|' + r.delivery_no, to: r.trans_order || '', kartu: r.card_no || '', cust: r.dealer, qty: Number(r.total_item) || 0, start_at: d.toISOString() };
+                const d = plDate(r.tgl || r.created_at) || new Date();
+                return { id: 'm' + r.id, stage: k, ref_no: r.delivery_no, gkey: (r.trans_order || '') + '|' + r.delivery_no, to: r.trans_order || '', kartu: r.card_no || '', cust: r.dealer, qty: Number(r.total_item) || 0, cfm: r.date_confirm || '', start_at: d.toISOString() };
             });
         }
         const plStageRows = k => PL_AUTO[k] ? plAutoRows(k) : (k === 'GR' ? plRows.filter(r => r.stage === k).map(r => Object.assign({}, r, { gkey: 'r' + r.id })) : plRows.filter(r => r.stage === k));
@@ -1646,7 +1646,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             if (m) return witaFromWall(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0));
             const d = new Date(s); return isNaN(d) ? null : d;
         }
-        // Umur (jam). OS Leveling dihitung per hari kalender WITA (sama dengan kolom LEAD TIME di file olahan)
+        // Umur (jam). OS Rilis dihitung per hari kalender WITA (sama dengan kolom LEAD TIME di file olahan)
         function plAgeH(startIso, stage) {
             return witaDayDiff(startIso) * 24;   // lead time selalu dalam hari
         }
@@ -1785,7 +1785,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     { h: 'TGL LEVELING', v: r => plTglStr(r.start_at, plSel) }, { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'KODE DEALER', v: r => plEsc(r.kode) },
                     { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) }, { h: 'MATERIAL', v: r => mono(r.material) }, { h: 'QTY', c: 'pl-r', v: qn }, LEAD]
                 : auto ? [
-                    { h: plSel === 'PICKING' ? 'TGL LEVELING' : 'DATE CONFIRM', v: r => plTglStr(r.start_at, 'LEVELING') }, { h: 'NOMOR TO', v: r => mono(r.to || '-') },
+                    { h: 'TGL LEVELING', v: r => plTglStr(r.start_at, 'LEVELING') }, ...(plSel === 'PACKING' ? [{ h: 'DATE CONFIRM', v: r => r.cfm ? plTglStr((plDate(r.cfm) || new Date()).toISOString(), 'LEVELING') : '-' }] : []), { h: 'NOMOR TO', v: r => mono(r.to || '-') },
                     { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'NO. KARTU', v: r => plEsc(r.kartu || '-') }, { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) },
                     { h: 'TOTAL MATERIAL', c: 'pl-r', v: qn }, LEAD]
                 : plSel === 'GR' ? [
@@ -1804,7 +1804,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 `<div class="pl-dsub">${list.length > LIM ? LIM + ' terlama dari ' + fmtN(list.length) + ' baris' : fmtN(list.length) + ' baris'}</div></div></div>` +
                 (list.length ? `<div class="pl-wrap"><table class="pl-tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` : empty);
         }
-        // Pencarian gabungan: semua tahap (OS GR, Leveling, Picking, Packing, Good Issue, Shipment) sekaligus
+        // Pencarian gabungan: semua tahap (OS GR, Rilis, Picking, Packing, Good Issue, Shipment) sekaligus
         function plSearchRender() {
             const box = plEl('plSearchRes'), inp = plEl('plSearch'); if (!box || !inp) return;
             const terms = String(inp.value || '').toLowerCase().split(/\s+/).filter(Boolean);
@@ -3782,8 +3782,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const cardChip = c => `<span class="kp-card${isPriCard(c) ? ' pri' : ''}">${esc(c)}</span>`;
         const whoCell = (by, at) => (by && by !== '-') ? `<b class="text-slate-800">${esc(by)}</b><br><span class="text-[11px] text-slate-400">${fmtTime(at)}</span>` : '<span class="text-slate-300">-</span>';
         const priBadge = c => isPriCard(c) ? `<span class="kp-pill" style="background:${priRank(c) === 2 ? '#f59e0b' : '#d97706'};color:#fff;margin-bottom:4px">⭐ PRIORITAS ${priRank(c) === 2 ? 'P' : 'H'}</span><br>` : '';
-        const urgentPack = () => statRows().filter(r => r.status === 'SIAP' && ageDays(r.disiapkan_at) >= URGENT_DAYS);
-        const isUrgent = r => r.status === 'SIAP' && ageDays(r.disiapkan_at) >= URGENT_DAYS;
+        const urgentPack = () => statRows().filter(r => r.status === 'SIAP' && (tglAge(r) || 0) >= URGENT_DAYS);
+        const isUrgent = r => r.status === 'SIAP' && (tglAge(r) || 0) >= URGENT_DAYS;
 
         function renderStats() {
             $('kpUrgPack').textContent = groupByCard(urgentPack()).length;
@@ -3859,7 +3859,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     <td class="kp-td font-semibold" data-label="Dealer">${esc(dealers)}${(() => { const l = [...new Set(x.items.map(i => i.lokasi).filter(Boolean))].join(', '); return l ? `<br><span class="text-[11px] text-emerald-700 font-bold">📍 ${esc(l)}</span>` : ''; })()}</td>
                     <td class="kp-td text-center font-bold" data-label="Total Item">${tot}</td>
                     <td class="kp-td text-xs whitespace-nowrap" data-label="Disiapkan">${fmtTime(x.items[0].disiapkan_at)}<br><span class="text-slate-400">${esc(x.items[0].disiapkan_by || '-')}</span></td>
-                    <td class="kp-td text-center" data-label="Status">${priBadge(x.card)}<span class="kp-pill ${x.status}">Menunggu Cek</span>${urg ? `<br><span class="kp-pill" style="background:#f1f5f9;color:#475569;margin-top:4px">⏳ ${Math.floor(ageDays(x.items[0].disiapkan_at))} hari</span>` : ''}</td>
+                    <td class="kp-td text-center" data-label="Status">${priBadge(x.card)}<span class="kp-pill ${x.status}">Menunggu Cek</span>${urg ? `<br><span class="kp-pill" style="background:#f1f5f9;color:#475569;margin-top:4px">⏳ ${Math.max(...x.items.map(i => tglAge(i) || 0))} hari</span>` : ''}</td>
                     <td class="kp-td text-center whitespace-nowrap" data-label="Aksi">
                         <button class="kp-btn green kp-admin-only" onclick="kpPack('${ids}')">✔ Selesai Pack</button>
                         <button class="kp-btn gray kp-admin-only" onclick="kpRevert('${ids}')">↩ Batal</button>
@@ -4020,11 +4020,10 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     g.length ? g.map(x => modalRow(x, fmtDate(x.items[0].tgl), redPill(tglAge(x.items[0]) + ' hari'))).join('') : emptyRow('✅ Tidak ada picking urgent.'));
                 return;
             }
-            const field = 'disiapkan_at';
-            const g = groupByCard(urgentPack()).sort((a, b) => priCmp(a.card, b.card) || ageDays(b.items[0][field]) - ageDays(a.items[0][field]));
-            openKpModal('red', '🚨 Urgent Packing', `Sudah dipicking (disiapkan) lebih dari ${URGENT_DAYS} hari tetapi belum dicek / selesai pack`,
-                [['No. Kartu', 1], ['Nama Dealer'], ['No. Delivery'], ['Total Item', 1], ['Waktu Disiapkan'], ['Umur', 1]],
-                g.length ? g.map(x => modalRow(x, fmtTime(x.items[0][field]), redPill(Math.floor(ageDays(x.items[0][field])) + ' hari'))).join('') : emptyRow('✅ Tidak ada kartu urgent.'));
+            const g = groupByCard(urgentPack()).sort((a, b) => priCmp(a.card, b.card) || (tglAge(b.items[0]) || 0) - (tglAge(a.items[0]) || 0));
+            openKpModal('red', '🚨 Urgent Packing', `Tanggal created on / Tgl Leveling sudah ${URGENT_DAYS} hari atau lebih dari hari ini, sudah dipicking tetapi belum dicek / selesai pack`,
+                [['No. Kartu', 1], ['Nama Dealer'], ['No. Delivery'], ['Total Item', 1], ['Tgl Leveling'], ['Umur', 1]],
+                g.length ? g.map(x => modalRow(x, fmtDate(x.items[0].tgl), redPill((tglAge(x.items[0]) || 0) + ' hari'))).join('') : emptyRow('✅ Tidak ada kartu urgent.'));
         };
         window.kpPrioritas = function () {
             const c = window.kpCtx || 'db';
