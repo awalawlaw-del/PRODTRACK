@@ -1785,7 +1785,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     { h: 'TGL LEVELING', v: r => plTglStr(r.start_at, plSel) }, { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'KODE DEALER', v: r => plEsc(r.kode) },
                     { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) }, { h: 'MATERIAL', v: r => mono(r.material) }, { h: 'QTY', c: 'pl-r', v: qn }, LEAD]
                 : auto ? [
-                    { h: 'TGL LEVELING', v: r => plTglStr(r.start_at, 'LEVELING') }, ...(plSel === 'PACKING' ? [{ h: 'DATE CONFIRM', v: r => r.cfm ? plTglStr((plDate(r.cfm) || new Date()).toISOString(), 'LEVELING') : '-' }] : []), { h: 'NOMOR TO', v: r => mono(r.to || '-') },
+                    { h: 'TGL TO', v: r => plTglStr(r.start_at, 'LEVELING') }, ...(plSel === 'PACKING' ? [{ h: 'DATE CONFIRM', v: r => r.cfm ? plTglStr((plDate(r.cfm) || new Date()).toISOString(), 'LEVELING') : '-' }] : []), { h: 'NOMOR TO', v: r => mono(r.to || '-') },
                     { h: 'NOMOR DELIVERY', v: r => mono(r.ref_no) }, { h: 'NO. KARTU', v: r => plEsc(r.kartu || '-') }, { h: 'NAMA DEALER', c: 'pl-w', v: r => plEsc(r.cust) },
                     { h: 'TOTAL MATERIAL', c: 'pl-r', v: qn }, LEAD]
                 : plSel === 'GR' ? [
