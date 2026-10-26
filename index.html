@@ -1427,13 +1427,13 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
                 <h2 class="text-sm font-extrabold text-slate-700 mb-3">➕ Tambah User</h2>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <input id="nuNama" placeholder="Nama" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="nuNama" placeholder="Nama" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"><select id="nuRoster" onchange="authNuToggle()" class="hidden border border-slate-200 rounded-lg p-2.5 text-sm outline-none"></select>
                     <select id="nuRole" onchange="authNuToggle()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"><option value="PART">Spare Part</option><option value="ADMIN">Admin</option><option value="CREW">Crew</option></select>
-                    <select id="nuBagian" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"></select>
+                    <select id="nuBagian" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"></select><div id="nuBagianInfo" class="hidden flex items-center px-3 text-sm font-bold text-slate-600 border border-slate-200 rounded-lg bg-slate-50"></div>
                     <input id="nuPass" type="text" placeholder="Password" disabled class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100">
                     <button onclick="authAddUser()" class="bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">Simpan</button>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-2">Semua akun wajib pakai password. Untuk Admin/Spare Part, nama juga dipakai sebagai username (huruf kecil tanpa spasi). Akun Crew yang dibuat di sini langsung aktif dan bisa login dengan nama/username + password tersebut, tanpa daftar lagi. Spare Part hanya bisa melihat TRACK-X (tampilan awal &amp; ubah tanggal), Dashboard TV &amp; Pipeline. Spare Part juga bisa membuat akun sendiri lewat tab Spare Part di halaman login.</p>
+                <p class="text-[11px] text-slate-400 mt-2">Semua akun wajib pakai password. Untuk Admin/Spare Part, nama juga dipakai sebagai username (huruf kecil tanpa spasi). Untuk Crew, nama dipilih dari daftar roster (bagian otomatis). Akun Crew yang dibuat di sini langsung aktif dan bisa login dengan nama/username + password tersebut, tanpa daftar lagi. Spare Part hanya bisa melihat TRACK-X (tampilan awal &amp; ubah tanggal), Dashboard TV &amp; Pipeline. Spare Part juga bisa membuat akun sendiri lewat tab Spare Part di halaman login.</p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
@@ -4820,7 +4820,16 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     </td></tr>`;
             }).join('');
         }
-        window.authNuToggle = function () { const crew = $('nuRole').value === 'CREW'; $('nuPass').disabled = false; $('nuBagian').disabled = !crew; };
+        window.authNuToggle = function () { const crew = $('nuRole').value === 'CREW'; $('nuPass').disabled = false;
+            $('nuNama').classList.toggle('hidden', crew); $('nuRoster').classList.toggle('hidden', !crew);
+            $('nuBagian').classList.toggle('hidden', crew); $('nuBagianInfo').classList.toggle('hidden', !crew);
+            if (crew) {   // nama crew WAJIB dari roster (sama dengan dropdown login lama) supaya data kartu nyambung
+                const cur = $('nuRoster').value, free = rosterList().filter(r => !crewUser(r));
+                $('nuRoster').innerHTML = '<option value="">— Pilih nama crew —</option>' + free.map(r => `<option value="${esc(r.code)}">${esc(r.nama)} (${esc(DIV_LABEL[r.div] || r.div)})</option>`).join('');
+                if (cur && free.some(r => r.code === cur)) $('nuRoster').value = cur;
+                const sel = free.find(r => r.code === $('nuRoster').value);
+                $('nuBagianInfo').textContent = sel ? (DIV_LABEL[sel.div] || sel.div) : (free.length ? 'Bagian otomatis' : 'Semua roster sudah punya akun');
+            } };
         window.authRenderActivity = function () {
             const rows = (window.kpGetRows && kpGetRows()) || [];
             const d = $('usrActDate').value;
@@ -4839,7 +4848,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             authNuToggle(); renderUsers(); authRenderActivity();
         };
         window.authAddUser = async function () {
-            const nama = $('nuNama').value.trim().toUpperCase().replace(/\s+/g, ' '), role = $('nuRole').value, pw = $('nuPass').value;
+            const role = $('nuRole').value, pw = $('nuPass').value; let nama = $('nuNama').value.trim().toUpperCase().replace(/\s+/g, ' '), rr = null;
+            if (role === 'CREW') { rr = rosterList().find(x => x.code === $('nuRoster').value); if (!rr) { alert('Pilih nama crew dari daftar roster.'); return; } nama = rr.nama; }
             if (nama.length < 2) { alert('Nama wajib diisi.'); return; }
             if (users.some(x => String(x.nama).toUpperCase() === nama)) { alert('Nama sudah terdaftar.'); return; }
             try {
@@ -4851,14 +4861,14 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     if (pw.length < 4) { alert('Password admin minimal 4 karakter.'); return; }
                     u = { username: un, nama, role, bagian: null, pass_hash: await hashPw(un, pw), aktif: true };
                 } else {
-                    let base = 'crew.' + nama.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, ''), un = base, i = 2;
+                    let base = 'crew.' + rr.code.toLowerCase(), un = base, i = 2;   // pola username sama dengan pendaftaran mandiri
                     while (users.some(x => x.username === un)) un = base + (i++);
                     if (pw.length < 4) { alert('Password crew minimal 4 karakter.'); return; }
-                    u = { username: un, nama, role: 'CREW', bagian: $('nuBagian').value, pass_hash: await hashPw(un, pw), aktif: true };
+                    u = { username: un, nama, role: 'CREW', bagian: rr.div, pass_hash: await hashPw(un, pw), aktif: true };
                 }
                 await insertUser(u);
-                ['nuNama', 'nuPass'].forEach(i => $(i).value = '');
-                renderUsers(); authRenderActivity(); fillLoginLists();
+                ['nuNama', 'nuPass'].forEach(i => $(i).value = ''); $('nuRoster').value = '';
+                authNuToggle(); renderUsers(); authRenderActivity(); fillLoginLists();
             } catch (e) { alert('Gagal menyimpan: ' + (e.message || e)); }
         };
         window.authSetBagian = async function (id, b) { try { await patchUser(id, { bagian: b }); authRenderActivity(); fillLoginLists(); } catch (e) { alert('Gagal: ' + (e.message || e)); } };
