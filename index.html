@@ -1428,12 +1428,12 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 <h2 class="text-sm font-extrabold text-slate-700 mb-3">➕ Tambah User</h2>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <input id="nuNama" placeholder="Nama" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <select id="nuRole" onchange="authNuToggle()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"><option value="PART">Spare Part</option><option value="ADMIN">Admin</option></select>
+                    <select id="nuRole" onchange="authNuToggle()" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"><option value="PART">Spare Part</option><option value="ADMIN">Admin</option><option value="CREW">Crew</option></select>
                     <select id="nuBagian" class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none"></select>
-                    <input id="nuPass" type="text" placeholder="Password (Admin/Spare Part)" disabled class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100">
+                    <input id="nuPass" type="text" placeholder="Password" disabled class="border border-slate-200 rounded-lg p-2.5 text-sm outline-none disabled:bg-slate-100">
                     <button onclick="authAddUser()" class="bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">Simpan</button>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-2">Untuk Admin/Spare Part, nama juga dipakai sebagai username (huruf kecil tanpa spasi) dan wajib pakai password. Spare Part hanya bisa melihat TRACK-X (tampilan awal &amp; ubah tanggal), Dashboard TV &amp; Pipeline. Spare Part juga bisa membuat akun sendiri lewat tab Spare Part di halaman login.</p>
+                <p class="text-[11px] text-slate-400 mt-2">Semua akun wajib pakai password. Untuk Admin/Spare Part, nama juga dipakai sebagai username (huruf kecil tanpa spasi). Akun Crew yang dibuat di sini langsung aktif dan bisa login dengan nama/username + password tersebut, tanpa daftar lagi. Spare Part hanya bisa melihat TRACK-X (tampilan awal &amp; ubah tanggal), Dashboard TV &amp; Pipeline. Spare Part juga bisa membuat akun sendiri lewat tab Spare Part di halaman login.</p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-5">
@@ -4632,6 +4632,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             try {
                 await loadUsers();
                 let u = users.find(x => String(x.username).toLowerCase() === raw.toLowerCase());
+                if (!u) { const nm = raw.toUpperCase().replace(/\s+/g, ' '); u = users.find(x => String(x.nama).toUpperCase().replace(/\s+/g, ' ') === nm && x.pass_hash); }
                 if (!u) {
                     const r = findRoster(raw);
                     if (r) { u = crewUser(r); if (!u || !u.pass_hash) { err.textContent = 'Anda belum punya password. Buka tab "Daftar Akun" dulu.'; return; } }
@@ -4819,7 +4820,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                     </td></tr>`;
             }).join('');
         }
-        window.authNuToggle = function () { const adm = $('nuRole').value !== 'CREW'; $('nuPass').disabled = !adm; $('nuBagian').disabled = adm; if (!adm) $('nuPass').value = ''; };
+        window.authNuToggle = function () { const crew = $('nuRole').value === 'CREW'; $('nuPass').disabled = false; $('nuBagian').disabled = !crew; };
         window.authRenderActivity = function () {
             const rows = (window.kpGetRows && kpGetRows()) || [];
             const d = $('usrActDate').value;
@@ -4852,7 +4853,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 } else {
                     let base = 'crew.' + nama.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, ''), un = base, i = 2;
                     while (users.some(x => x.username === un)) un = base + (i++);
-                    u = { username: un, nama, role: 'CREW', bagian: $('nuBagian').value, pass_hash: '', aktif: true };
+                    if (pw.length < 4) { alert('Password crew minimal 4 karakter.'); return; }
+                    u = { username: un, nama, role: 'CREW', bagian: $('nuBagian').value, pass_hash: await hashPw(un, pw), aktif: true };
                 }
                 await insertUser(u);
                 ['nuNama', 'nuPass'].forEach(i => $(i).value = '');
