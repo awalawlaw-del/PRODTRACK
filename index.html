@@ -1652,7 +1652,9 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         let plRows = [], plSel = 'LEVELING', plMode = 'cloud';
         const plEl = id => document.getElementById(id);
         const plEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-        const PL_T = 24;   // batas lewat target = 1 hari (tanpa input)
+        const PL_T = 24;   // batas lewat target default = 1 hari
+        const PL_TARGET = { PICKING: 72, PACKING: 96 };   // OS Picking 3 hari, OS Packing 4 hari (dalam jam)
+        const plLimitH = k => PL_TARGET[k] || PL_T;
         function plTarget() { try { return JSON.parse(localStorage.getItem(PL_TGT) || '{}'); } catch (_) { return {}; } }
         function plSetTarget(k, v) { const t = plTarget(); t[k] = Math.max(1, parseFloat(v) || 24); localStorage.setItem(PL_TGT, JSON.stringify(t)); plRender(); }
         function plFmt(h) {
@@ -1800,7 +1802,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             const stat = (l, v) => `<div class="pl-stat"><span>${l}</span><b>${v}</b></div>`;
             let html = '';
             PL_STAGES.forEach((s, i) => {
-                const rows = plStageRows(s.k), t = PL_T;
+                const rows = plStageRows(s.k), t = plLimitH(s.k);
                 const grp = plGroup(rows), n = grp.length;
                 const ages = grp.map(g => plAgeH(g.start_at, s.k)), late = ages.filter(a => a > t).length;
                 const avg = n ? ages.reduce((a, b) => a + b, 0) / n : 0, mx = n ? Math.max.apply(null, ages) : 0;
@@ -1842,7 +1844,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             plEl('plCards').innerHTML = html;
             plSearchRender();
 
-            const st = PL_STAGES.find(x => x.k === plSel), rows = plStageRows(plSel), t = PL_T, auto = !!PL_AUTO[plSel];
+            const st = PL_STAGES.find(x => x.k === plSel), rows = plStageRows(plSel), t = plLimitH(plSel), auto = !!PL_AUTO[plSel];
             const list = rows.map(r => Object.assign({ age: plAgeH(r.start_at, plSel) }, r)).sort((a, b) => b.age - a.age || String(a.ref_no).localeCompare(String(b.ref_no)));
             const mono = v => `<span class="pl-mono">${plEsc(v)}</span>`, qn = r => Number(r.qty) ? fmtN(r.qty) : '';
             const LEAD = { h: 'LEAD TIME', c: 'pl-c', v: r => `<span class="pl-pill ${r.age > t ? 'pl-bad' : 'pl-ok'}">${plFmt(r.age)}</span>` };
@@ -1893,7 +1895,7 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
                 const kode = r.kode ? (gr ? `<span class="pl-pill ${plIsEmg(r) ? 'pl-bad' : 'pl-ok'}">${plEsc(r.kode)}</span>` : plEsc(r.kode)) : '';
                 return '<tr>' + `<td>${h.s.ic} ${plEsc(h.s.n)}</td><td>${gr ? mono(r.material || r.ref_no) : mono(r.ref_no)}</td><td>${gr ? '' : mono(r.material || '')}</td>` +
                     `<td>${plEsc(r.cust)}</td><td>${kode}</td><td>${mono([r.to, r.kartu].filter(Boolean).join(' / '))}</td><td class="pl-r">${Number(r.qty) ? Number(r.qty).toLocaleString('id-ID') : ''}</td>` +
-                    `<td>${plTglStr(r.start_at, 'LEVELING')}</td><td class="pl-c">${['SHIPMENT'].includes(h.s.k) ? '' : `<span class="pl-pill ${h.age > PL_T ? 'pl-bad' : 'pl-ok'}">${plFmt(h.age)}</span>`}</td></tr>`;
+                    `<td>${plTglStr(r.start_at, 'LEVELING')}</td><td class="pl-c">${['SHIPMENT'].includes(h.s.k) ? '' : `<span class="pl-pill ${h.age > plLimitH(h.s.k) ? 'pl-bad' : 'pl-ok'}">${plFmt(h.age)}</span>`}</td></tr>`;
             }).join('');
             box.classList.remove('hidden');
             box.innerHTML = hits.length
