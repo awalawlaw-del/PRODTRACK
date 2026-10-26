@@ -1493,8 +1493,9 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         const TZ_APP = 'Asia/Makassar', WITA_MS = 8 * 3600e3;
         function witaParts(d) {
             const o = {};
-            new Intl.DateTimeFormat('en-GB', { timeZone: TZ_APP, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                .formatToParts(d || new Date()).forEach(p => { o[p.type] = p.value; });
+            // formatter dibuat sekali lalu dipakai ulang (membuat Intl.DateTimeFormat berulang-ulang itu berat)
+            if (!witaParts._f) witaParts._f = new Intl.DateTimeFormat('en-GB', { timeZone: TZ_APP, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            witaParts._f.formatToParts(d || new Date()).forEach(p => { o[p.type] = p.value; });
             return o;
         }
         function witaYmd(d) { const z = witaParts(d); return z.year + '-' + z.month + '-' + z.day; }
@@ -1502,7 +1503,19 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
         // tanggal/jam "dinding" (tanpa zona, misalnya dari Excel) -> waktu absolut menurut WITA
         function witaFromWall(y, mo, d, h, mi) { return new Date(Date.UTC(y, mo - 1, d, h || 0, mi || 0) - WITA_MS); }
         // selisih hari kalender (WITA) dari satu waktu sampai sekarang
+        const _wdCache = new Map(); let _wdToday = '', _wdTodayAt = 0;
         function witaDayDiff(fromIso, to) {
+            if (!to) {   // kasus umum (dibanding hari ini): cache per tanggal mulai, reset tiap 30 detik
+                const now = Date.now();
+                if (now - _wdTodayAt > 30000) { _wdTodayAt = now; _wdCache.clear(); _wdToday = witaYmd(new Date()); }
+                let v = _wdCache.get(fromIso);
+                if (v === undefined) {
+                    const a = witaYmd(new Date(fromIso)).split('-').map(Number), b = _wdToday.split('-').map(Number);
+                    v = Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+                    _wdCache.set(fromIso, v);
+                }
+                return v;
+            }
             const a = witaYmd(new Date(fromIso)).split('-').map(Number), b = witaYmd(to || new Date()).split('-').map(Number);
             return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
         }
