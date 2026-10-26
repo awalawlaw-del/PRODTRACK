@@ -4824,8 +4824,8 @@ create policy "au_all" on app_users for all using (true) with check (true);</pre
             $('nuNama').classList.toggle('hidden', crew); $('nuRoster').classList.toggle('hidden', !crew);
             $('nuBagian').classList.toggle('hidden', crew); $('nuBagianInfo').classList.toggle('hidden', !crew);
             if (crew) {   // nama crew WAJIB dari roster (sama dengan dropdown login lama) supaya data kartu nyambung
-                const cur = $('nuRoster').value, free = rosterList().filter(r => !crewUser(r));
-                $('nuRoster').innerHTML = '<option value="">— Pilih nama crew —</option>' + free.map(r => `<option value="${esc(r.code)}">${esc(r.nama)} (${esc(DIV_LABEL[r.div] || r.div)})</option>`).join('');
+                const cur = $('nuRoster').value, all = rosterList(), free = all.filter(r => !crewUser(r));
+                $('nuRoster').innerHTML = '<option value="">— Pilih nama crew —</option>' + all.map(r => { const ada = !!crewUser(r); return `<option value="${esc(r.code)}"${ada ? ' disabled' : ''}>${esc(r.nama)} (${esc(DIV_LABEL[r.div] || r.div)})${ada ? ' — sudah punya akun' : ''}</option>`; }).join('');
                 if (cur && free.some(r => r.code === cur)) $('nuRoster').value = cur;
                 const sel = free.find(r => r.code === $('nuRoster').value);
                 $('nuBagianInfo').textContent = sel ? (DIV_LABEL[sel.div] || sel.div) : (free.length ? 'Bagian otomatis' : 'Semua roster sudah punya akun');
